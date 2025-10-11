@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+      integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="theme.css" />
+    <link rel="stylesheet" href="style.css" />
+    <title>Todo List</title>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-content">
+        <h1 class="app-title">Dashboard</h1>
+        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+      <nav class="nav-menu" id="navMenu">
+        <a href="breather-app/index.html" class="nav-link">
+          <i class="fa-solid fa-spa"></i>
+          <span>Breathing Exercises</span>
+        </a>
+      </nav>
+    </header>
+
+    <div class="container">
+      <form id="todo-form">
+        <div class="form-row">
+          <input
+            type="text"
+            class="form-input"
+            id="todo-input"
+            name="todo"
+            placeholder="The Rule of Three?"
+          />
+          <button type="submit" class="submit-arrow" title="Add Task">
+            <i class="fa-solid fa-arrow-right"></i>
+          </button>
+          <select id="priority-select" class="priority-select" style="display: none;">
+            <option value="low" selected>Low Priority</option>
+            <option value="medium">Medium Priority</option>
+            <option value="high">High Priority</option>
+          </select>
+        </div>
+      </form>
+
+      <ul id="todo-list" class="todos">
+      </ul>
+
+      <div class="advice-icon-container">
+        <div class="advice-icon" id="advice-icon">
+          <i class="fa-solid fa-lightbulb"></i>
+        </div>
+        <div class="advice-tooltip" id="advice-tooltip">
+          <p id="advice-text"></p>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

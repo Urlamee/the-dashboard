@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mindful Breathing Circle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        :root {
+            /* Default theme - Forest Breeze */
+            --bg-gradient-start: #e0f2f1;
+            --bg-gradient-end: #e8f5e9;
+            --primary-light: #38b2ac;
+            --primary-dark: #48bb78;
+            --text-color: rgb(22, 101, 52);
+            --quadrant-bg: rgba(56, 178, 172, 0.1);
+            --quadrant-hover: rgba(72, 187, 120, 0.15);
+            --quadrant-active: rgba(72, 187, 120, 0.2);
+        }
+
+        /* Ocean Calm Theme */
+        [data-theme="ocean"] {
+            --bg-gradient-start: #e3f2fd;
+            --bg-gradient-end: #ebf8ff;
+            --primary-light: #4299e1;
+            --primary-dark: #2b6cb0;
+            --text-color: rgb(26, 86, 219);
+            --quadrant-bg: rgba(66, 153, 225, 0.1);
+            --quadrant-hover: rgba(43, 108, 176, 0.15);
+            --quadrant-active: rgba(43, 108, 176, 0.2);
+        }
+
+        /* Sunset Serenity Theme */
+        [data-theme="sunset"] {
+            --bg-gradient-start: #feebc8;
+            --bg-gradient-end: #fbd38d;
+            --primary-light: #ed8936;
+            --primary-dark: #c05621;
+            --text-color: rgb(154, 52, 18);
+            --quadrant-bg: rgba(237, 137, 54, 0.1);
+            --quadrant-hover: rgba(192, 86, 33, 0.15);
+            --quadrant-active: rgba(192, 86, 33, 0.2);
+        }
+
+        /* Lavender Mist Theme */
+        [data-theme="lavender"] {
+            --bg-gradient-start: #e9d8fd;
+            --bg-gradient-end: #d6bcfa;
+            --primary-light: #9f7aea;
+            --primary-dark: #6b46c1;
+            --text-color: rgb(126, 34, 206);
+            --quadrant-bg: rgba(159, 122, 234, 0.1);
+            --quadrant-hover: rgba(107, 70, 193, 0.15);
+            --quadrant-active: rgba(107, 70, 193, 0.2);
+        }
+
+
+        /* Citrine Glow Theme */
+        [data-theme="citrine"] {
+            --bg-gradient-start: #fffde7;
+            --bg-gradient-end: #fff9c4;
+            --primary-light: #ffd54f;
+            --primary-dark: #ffc107;
+            --text-color: rgb(186, 104, 34);
+            --quadrant-bg: rgba(255, 213, 79, 0.1);
+            --quadrant-hover: rgba(255, 193, 7, 0.15);
+            --quadrant-active: rgba(255, 193, 7, 0.2);
+        }
+
+/* Forest Breeze Theme */
+        [data-theme="forest"] {
+    --bg-gradient-start: #e8f5e9;
+    --bg-gradient-end: #c8e6c9;
+    --primary-light: #66bb6a;
+    --primary-dark: #2e7d32;
+    --text-color: rgb(27, 94, 32);
+    --quadrant-bg: rgba(102, 187, 106, 0.1);
+    --quadrant-hover: rgba(46, 125, 50, 0.15);
+    --quadrant-active: rgba(46, 125, 50, 0.2);
+}
+
+
+/* Sand Theme */
+[data-theme="sand"] {
+    --bg-gradient-start: #f5f5f5;
+    --bg-gradient-end: #e0e0e0;
+    --primary-light: #bdbdbd;
+    --primary-dark: #616161;
+    --text-color: rgb(58, 58, 58);
+    --quadrant-bg: rgba(189, 189, 189, 0.1);
+    --quadrant-hover: rgba(97, 97, 97, 0.15);
+    --quadrant-active: rgba(97, 97, 97, 0.2);
+}
+
+
+
+
+        #backButton {
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: var(--quadrant-bg);
+            border: 2px solid var(--quadrant-hover);
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            text-decoration: none;
+        }
+
+        #backButton:hover {
+            transform: scale(1.1);
+            background: var(--quadrant-hover);
+            border-color: var(--quadrant-active);
+        }
+
+        #backButton svg {
+            width: 1.2rem;
+            height: 1.2rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        #themeButton {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: var(--quadrant-bg);
+            border: 2px solid var(--quadrant-hover);
+            backdrop-filter: blur(4px);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        #themeButton:hover {
+            transform: scale(1.1);
+            background: var(--quadrant-hover);
+            border-color: var(--quadrant-active);
+        }
+
+        #themeButton svg {
+            width: 1.2rem;
+            height: 1.2rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            caret-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        * {
+            caret-color: transparent;
+            font-family: 'Nunito Sans', sans-serif;
+        }
+        .quadrant-container {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+            z-index: 20;
+        }
+        .quadrant {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+            z-index: 1;
+        }
+        .quadrant span {
+            opacity: 0.9;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 2;
+            pointer-events: none;
+            color: var(--text-color);
+        }
+        .quadrant::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(
+                circle at center,
+                transparent 45%,
+                var(--quadrant-hover) 100%
+            );
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .quadrant:hover::before {
+            opacity: 1;
+        }
+        .quadrant:hover span {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+        .quadrant-1 {
+            top: 0;
+            left: 0;
+            transform-origin: bottom right;
+            border-top-left-radius: 100%;
+            background: radial-gradient(
+                circle at bottom right,
+                transparent 45%,
+                var(--quadrant-bg) 85%,
+                var(--quadrant-bg) 100%
+            );
+        }
+        .quadrant-2 {
+            top: 0;
+            right: 0;
+            transform-origin: bottom left;
+            border-top-right-radius: 100%;
+            background: radial-gradient(
+                circle at bottom left,
+                transparent 45%,
+                var(--quadrant-bg) 85%,
+                var(--quadrant-bg) 100%
+            );
+        }
+        .quadrant-3 {
+            bottom: 0;
+            left: 0;
+            transform-origin: top right;
+            border-bottom-left-radius: 100%;
+            background: radial-gradient(
+                circle at top right,
+                transparent 45%,
+                var(--quadrant-bg) 85%,
+                var(--quadrant-bg) 100%
+            );
+        }
+        .quadrant-4 {
+            bottom: 0;
+            right: 0;
+            transform-origin: top left;
+            border-bottom-right-radius: 100%;
+            background: radial-gradient(
+                circle at top left,
+                transparent 45%,
+                var(--quadrant-bg) 85%,
+                var(--quadrant-bg) 100%
+            );
+        }
+        .quadrant.active {
+            background: radial-gradient(
+                circle at center,
+                transparent 45%,
+                var(--quadrant-active) 85%,
+                var(--quadrant-active) 100%
+            ) !important;
+        }
+        .quadrant.active::before {
+            opacity: 0;
+        }
+        .quadrant.active span {
+            transform: scale(1.1);
+            opacity: 1;
+            color: var(--text-color);
+        }
+        .breathing-circle {
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, 
+                var(--primary-light) 0%, 
+                var(--primary-dark) 25%, 
+                var(--primary-light) 50%, 
+                var(--primary-dark) 75%, 
+                var(--primary-light) 100%
+            );
+            background-size: 400% 400%;
+            transform-origin: center;
+            will-change: transform;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .app-container.session-active .breathing-circle:hover {
+            filter: brightness(1.1);
+        }
+        
+        .app-container:not(.session-active) .breathing-circle {
+            cursor: default;
+        }
+        
+        /* Add transition classes for each phase */
+        .breathing-circle.inhale {
+            animation: wave 6s ease infinite;
+        }
+        .breathing-circle.hold {
+            animation: wave 6s ease infinite, pulse 3s ease infinite;
+        }
+        .breathing-circle.exhale {
+            animation: wave 6s ease infinite;
+        }
+
+        .app-container.session-active .quadrant-container {
+            opacity: 0.3;
+            filter: blur(2px);
+            pointer-events: none;
+            z-index: 1;
+        }
+        #textContainer {
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transform: scale(1);
+            opacity: 1;
+            z-index: 15;
+        }
+        #stopButton {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        #stopButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        .app-container.session-active #circleContainer:hover #stopIcon {
+            opacity: 1;
+        }
+
+        .app-container.session-active #circleContainer:hover #textContainer {
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        #stopIcon {
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        #stopIcon svg {
+            width: 2.5rem;
+            height: 2.5rem;
+            color: white;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) 
+                   drop-shadow(0 0 8px var(--primary-dark));
+            transition: opacity 0.3s ease;
+            opacity: 0.95;
+            stroke: var(--primary-dark);
+            stroke-width: 1;
+        }
+
+        /* Style for the pause icon paths */
+        #stopIcon svg path {
+            stroke-width: 0.5;
+            stroke: var(--primary-dark);
+        }
+
+        /* Add a subtle glow effect on hover */
+        .app-container.session-active #circleContainer:hover #stopIcon svg {
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) 
+                   drop-shadow(0 0 12px var(--primary-dark));
+        }
+
+        /* Remove old scaling styles */
+        .breathing-circle.inhale #stopIcon svg,
+        .breathing-circle.exhale #stopIcon svg {
+            transform: none;
+        }
+
+        /* Update the HTML structure for the stop icon */
+        .breathing-circle.inhale #stopIcon svg {
+            transform: none;
+        }
+
+        .breathing-circle.exhale #stopIcon svg {
+            transform: none;
+        }
+
+        /* Remove the black background circle */
+        #stopIcon .bg-black\/40 {
+            display: none;
+        }
+
+        .app-container.session-active #circleContainer:hover .breathing-circle {
+            filter: brightness(0.95);
+        }
+
+        #circleContainer {
+            z-index: 10;
+        }
+
+        /* Ensure quadrants are above the breathing circle when not in session */
+        .app-container:not(.session-active) .quadrant-container {
+            z-index: 20;
+        }
+
+        /* Make sure quadrants are clickable */
+        .app-container:not(.session-active) .quadrant {
+            pointer-events: auto;
+        }
+
+        @keyframes wave {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(var(--primary-dark-rgb), 0.4);
+            }
+            70% {
+                box-shadow: 0 0 0 20px rgba(var(--primary-dark-rgb), 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(var(--primary-dark-rgb), 0);
+            }
+        }
+
+        .breathing-circle::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, 
+                rgba(255, 255, 255, 0.1) 0%,
+                rgba(255, 255, 255, 0.05) 50%,
+                transparent 70%
+            );
+            opacity: 0;
+            transition: opacity 3s;
+        }
+
+        .breathing-circle.inhale::before {
+            opacity: 1;
+        }
+
+        .breathing-circle.hold::before {
+            opacity: 1;
+        }
+
+        .breathing-circle.exhale::before {
+            opacity: 1;
+        }
+
+        /* Update text styles for better visibility */
+        #guideText {
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #timerText {
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .technique-selector {
+            position: absolute;
+            top: -120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            z-index: 30;
+        }
+
+        .technique-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            background: rgba(56, 178, 172, 0.1);
+            color: rgb(22, 101, 52);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(56, 178, 172, 0.2);
+            backdrop-filter: blur(4px);
+        }
+
+        .technique-btn:hover {
+            background: rgba(56, 178, 172, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .technique-btn.active {
+            background: rgba(56, 178, 172, 0.3);
+            border-color: rgba(56, 178, 172, 0.4);
+        }
+
+        .app-container.session-active .technique-selector {
+            opacity: 0.3;
+            filter: blur(2px);
+            pointer-events: none;
+        }
+
+        .technique-title {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px;
+            font-weight: 300;
+            color: #666;
+            opacity: 0.9;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .technique-title.changing {
+            opacity: 0;
+            transform: translateX(-50%) translateY(-10px);
+        }
+
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            font-size: 28px;
+            font-weight: 400;
+            color: #666;
+            background: none;
+            border: none;
+            padding: 10px;
+        }
+
+        .nav-arrow:hover {
+            opacity: 1;
+        }
+
+        .nav-arrow.left {
+            left: -50px;
+        }
+
+        .nav-arrow.right {
+            right: -50px;
+        }
+
+        .app-container.session-active .nav-arrow,
+        .app-container.session-active .technique-title {
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+        }
+
+        #breathingCircle {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transform: scale(0.5);
+            transition: all 3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary-dark) 100%);
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        #guideText {
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+            font-weight: 300;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            opacity: 0.9;
+            transform: scale(1);
+            text-align: center;
+            max-width: 80%;
+            line-height: 1.2;
+        }
+
+        .breathing-circle.inhale #guideText {
+            transform: scale(0.8);
+        }
+
+        .breathing-circle.exhale #guideText {
+            transform: scale(1.2);
+        }
+
+        .header-timer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--quadrant-bg);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+
+        .header-timer-bar {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to right, var(--primary-light), var(--primary-dark));
+            transform-origin: left;
+            transform: scaleX(0);
+            transition: transform linear;
+            opacity: 0.4;
+        }
+
+        .session-active .header-timer {
+            transform: scaleY(1);
+        }
+
+        #timerBar {
+            position: fixed;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: var(--quadrant-bg);
+            z-index: -1;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 10px;
+        }
+
+        #timerProgress {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent 0%,
+                var(--primary-light) 50%,
+                var(--primary-dark) 100%
+            );
+            transform-origin: left;
+            transform: scaleX(0);
+            position: relative;
+            transition: transform linear;
+        }
+
+        #timerProgress::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255, 255, 255, 0.1) 10px,
+                rgba(255, 255, 255, 0.1) 20px
+            );
+            animation: waterFlow 20s linear infinite;
+        }
+
+        #timerProgress::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2) 20%,
+                rgba(255, 255, 255, 0.2) 80%,
+                transparent
+            );
+            animation: waterShine 3s ease-in-out infinite;
+        }
+
+        @keyframes waterFlow {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 50px 50px;
+            }
+        }
+
+        @keyframes waterShine {
+            0% {
+                opacity: 0.3;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                opacity: 0.3;
+            }
+        }
+
+        .app-container.session-active #timerBar {
+            opacity: 1;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Add ripple effect at the progress edge */
+        #timerProgress::before {
+            mask-image: linear-gradient(
+                to right,
+                transparent,
+                black 10px,
+                black calc(100% - 10px),
+                transparent
+            );
+            -webkit-mask-image: linear-gradient(
+                to right,
+                transparent,
+                black 10px,
+                black calc(100% - 10px),
+                transparent
+            );
+        }
+
+        @media (max-width: 768px) {
+            #timerBar {
+                width: 300px;
+            }
+        }
+
+        /* Add styles for the custom time input */
+        #customTimeModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        #customTimeModal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            max-width: 90%;
+            width: 400px;
+        }
+
+        .modal-content input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--quadrant-bg);
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            font-size: 1.1rem;
+            outline: none;
+        }
+
+        .modal-content input:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px var(--quadrant-hover);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-button {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-button.confirm {
+            background: var(--primary-light);
+            color: white;
+        }
+
+        .modal-button.confirm:hover {
+            background: var(--primary-dark);
+        }
+
+        .modal-button.cancel {
+            background: var(--quadrant-bg);
+            color: var(--text-color);
+        }
+
+        .modal-button.cancel:hover {
+            background: var(--quadrant-hover);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen antialiased">
+    <a href="../index.html" id="backButton" title="Back to Todo List">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path fill-rule="evenodd" d="M9.53 2.47a.75.75 0 010 1.06L4.81 8.25H15a6.75 6.75 0 010 13.5h-3a.75.75 0 010-1.5h3a5.25 5.25 0 100-10.5H4.81l4.72 4.72a.75.75 0 11-1.06 1.06l-6-6a.75.75 0 010-1.06l6-6a.75.75 0 011.06 0z" clip-rule="evenodd" />
+        </svg>
+    </a>
+
+    <button id="themeButton" title="Change theme">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2.25a.75.75 0 01.75.75v2.25a.75.75 0 01-1.5 0V3a.75.75 0 01.75-.75zM7.5 12a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM18.894 6.166a.75.75 0 00-1.06-1.06l-1.591 1.59a.75.75 0 101.06 1.061l1.591-1.59zM21.75 12a.75.75 0 01-.75.75h-2.25a.75.75 0 010-1.5H21a.75.75 0 01.75.75zM17.834 18.894a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 10-1.061 1.06l1.59 1.591zM12 18a.75.75 0 01.75.75V21a.75.75 0 01-1.5 0v-2.25A.75.75 0 0112 18zM7.758 17.303a.75.75 0 00-1.061-1.06l-1.591 1.59a.75.75 0 001.06 1.061l1.591-1.59zM6 12a.75.75 0 01-.75.75H3a.75.75 0 010-1.5h2.25A.75.75 0 016 12zM6.697 7.757a.75.75 0 001.06-1.06l-1.59-1.591a.75.75 0 00-1.061 1.06l1.59 1.591z" />
+        </svg>
+    </button>
+
+    <div id="timerBar">
+        <div id="timerProgress"></div>
+    </div>
+
+    <div id="appContainer" class="app-container flex flex-col items-center justify-center w-full h-full p-4">
+        <div class="relative flex items-center justify-center">
+            <div class="technique-title" id="techniqueTitle">Box Breathing</div>
+            <button class="nav-arrow left" onclick="prevTechnique()">←</button>
+            <button class="nav-arrow right" onclick="nextTechnique()">→</button>
+            
+            <div id="quadrantContainer" class="quadrant-container">
+                <div data-time="120" class="quadrant quadrant-1">
+                    <span class="transform -rotate-45 text-lg">2m</span>
+                </div>
+                <div data-time="300" class="quadrant quadrant-2">
+                    <span class="transform rotate-45 text-lg">5m</span>
+                </div>
+                <div data-time="600" class="quadrant quadrant-3">
+                    <span class="transform rotate-45 text-lg">10m</span>
+                </div>
+                <div data-time="custom" class="quadrant quadrant-4">
+                    <span class="transform -rotate-45 text-lg">Custom</span>
+                </div>
+            </div>
+
+            <div class="absolute w-72 h-72 md:w-80 md:h-80 flex items-center justify-center">
+                <div id="circleContainer" class="relative w-full h-full cursor-pointer" title="Click to stop session">
+                    <div id="breathingCircle" class="breathing-circle">
+                        <div id="textContainer" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div id="guideText" class="text-center"></div>
+                        </div>
+                    </div>
+                    <div id="stopIcon" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="relative">
+                            <rect x="6" y="4" width="4" height="16" rx="1" />
+                            <rect x="14" y="4" width="4" height="16" rx="1" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar"></div>
+        </div>
+
+        <!-- Add modal for custom time input -->
+        <div id="customTimeModal">
+            <div class="modal-content">
+                <h2 class="text-xl font-semibold mb-2" style="color: var(--text-color)">Custom Duration</h2>
+                <p class="text-sm opacity-75 mb-4" style="color: var(--text-color)">Enter duration in minutes</p>
+                <input type="number" id="customTimeInput" min="1" max="60" placeholder="Enter minutes (1-60)" />
+                <div class="modal-buttons">
+                    <button class="modal-button cancel" onclick="closeCustomTimeModal()">Cancel</button>
+                    <button class="modal-button confirm" onclick="startCustomTime()">Start</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        const appContainer = document.getElementById('appContainer');
+        const quadrantContainer = document.getElementById('quadrantContainer');
+        const circleContainer = document.getElementById('circleContainer');
+        const breathingCircle = document.getElementById('breathingCircle');
+        const guideText = document.getElementById('guideText');
+        const timerText = document.getElementById('timerText');
+        const quadrants = document.querySelectorAll('.quadrant');
+        const techniqueButtons = document.querySelectorAll('.technique-btn');
+
+        // Update styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .app-container.session-active #circleContainer:hover .breathing-circle {
+                filter: brightness(1.1);
+            }
+            .app-container:not(.session-active) #circleContainer {
+                cursor: default;
+            }
+        `;
+        document.head.appendChild(style);
+
+        let sessionInterval;
+        let countdownInterval;
+        let remainingTime = 0;
+        let isSessionActive = false;
+        let isTransitioning = false;
+        let currentTechnique = 'box';
+
+        const breathingPatterns = {
+            'box': [
+                { phase: 'Inhale', duration: 4000, scale: 1.5, class: 'inhale' },
+                { phase: 'Hold', duration: 4000, scale: 1.5, class: 'hold' },
+                { phase: 'Exhale', duration: 4000, scale: 0.5, class: 'exhale' },
+                { phase: 'Hold Empty', duration: 4000, scale: 0.5, class: 'hold' }
+            ],
+            '478': [
+                { phase: 'Inhale', duration: 4000, scale: 1.5, class: 'inhale' },
+                { phase: 'Hold', duration: 7000, scale: 1.5, class: 'hold' },
+                { phase: 'Exhale', duration: 8000, scale: 0.5, class: 'exhale' }
+            ],
+            'wim-hof': [
+                { phase: 'Power Breath', duration: 1500, scale: 1.5, class: 'inhale' },
+                { phase: 'Release', duration: 1500, scale: 0.5, class: 'exhale' },
+                { phase: 'Power Breath', duration: 1500, scale: 1.5, class: 'inhale' },
+                { phase: 'Release', duration: 1500, scale: 0.5, class: 'exhale' },
+                { phase: 'Power Breath', duration: 1500, scale: 1.5, class: 'inhale' },
+                { phase: 'Release', duration: 1500, scale: 0.5, class: 'exhale' },
+                { phase: 'Hold Empty', duration: 15000, scale: 0.5, class: 'hold' },
+                { phase: 'Recovery Breath', duration: 2000, scale: 1.5, class: 'inhale' },
+                { phase: 'Hold Full', duration: 15000, scale: 1.5, class: 'hold' },
+                { phase: 'Release', duration: 2000, scale: 0.5, class: 'exhale' }
+            ],
+            'tummo': [
+                { phase: 'Deep Breath', duration: 4000, scale: 1.5, class: 'inhale' },
+                { phase: 'Exhale', duration: 4000, scale: 0.5, class: 'exhale' },
+                { phase: 'Deep Breath', duration: 4000, scale: 1.5, class: 'inhale' },
+                { phase: 'Exhale', duration: 4000, scale: 0.5, class: 'exhale' },
+                { phase: 'Deep Breath', duration: 4000, scale: 1.5, class: 'inhale' },
+                { phase: 'Exhale', duration: 4000, scale: 0.5, class: 'exhale' },
+                { phase: 'Deep Breath', duration: 4000, scale: 1.5, class: 'inhale' },
+                { phase: 'Exhale', duration: 4000, scale: 0.5, class: 'exhale' },
+                { phase: 'Deep Breath', duration: 4000, scale: 1.5, class: 'inhale' },
+                { phase: 'Hold Full', duration: 15000, scale: 1.5, class: 'hold' },
+                { phase: 'Exhale', duration: 4000, scale: 0.5, class: 'exhale' },
+                { phase: 'Hold Empty', duration: 10000, scale: 0.5, class: 'hold' }
+            ]
+        };
+
+        function startSession(duration) {
+            if (isSessionActive || isTransitioning) return;
+            isTransitioning = true;
+            
+            appContainer.classList.add('session-active');
+            document.getElementById('timerBar').style.opacity = '1';
+            
+            remainingTime = duration;
+            const timerProgress = document.getElementById('timerProgress');
+            timerProgress.style.transition = `transform ${duration}s linear`;
+            timerProgress.style.transform = 'scaleX(1)';
+            
+            setTimeout(() => {
+                isTransitioning = false;
+                isSessionActive = true;
+                
+                let currentPhaseIndex = -1;
+                const currentPattern = breathingPatterns[currentTechnique];
+
+                function nextPhase() {
+                    if (!isSessionActive) return;
+                    
+                    currentPhaseIndex = (currentPhaseIndex + 1) % currentPattern.length;
+                    const phase = currentPattern[currentPhaseIndex];
+                    
+                    breathingCircle.style.transform = `scale(${phase.scale})`;
+                    breathingCircle.className = `breathing-circle ${phase.class}`;
+                    guideText.textContent = phase.phase;
+                    
+                    setTimeout(nextPhase, phase.duration);
+                }
+                
+                nextPhase();
+                
+                sessionInterval = setInterval(() => {
+                    remainingTime--;
+                    if (remainingTime <= 0) {
+                        endSession();
+                    }
+                }, 1000);
+            }, 1000);
+        }
+
+        function endSession() {
+            if (!isSessionActive) return;
+            
+            clearInterval(sessionInterval);
+            appContainer.classList.remove('session-active');
+            document.getElementById('timerBar').style.opacity = '0';
+            
+            guideText.textContent = '';
+            breathingCircle.style.transform = 'scale(0.5)';
+            breathingCircle.className = 'breathing-circle';
+            
+            const timerProgress = document.getElementById('timerProgress');
+            timerProgress.style.transition = 'transform 0.3s ease';
+            timerProgress.style.transform = 'scaleX(0)';
+            
+            quadrants.forEach(q => q.classList.remove('active'));
+            
+            isSessionActive = false;
+        }
+
+        function updateTimerDisplay() {
+            if (remainingTime <= 0) {
+                timerText.textContent = "Session Complete";
+                return;
+            }
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            timerText.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        quadrants.forEach(quadrant => {
+            quadrant.addEventListener('click', () => {
+                if (isSessionActive) return;
+                
+                const time = quadrant.dataset.time;
+                if (time === 'custom') {
+                    showCustomTimeModal();
+                } else {
+                    quadrants.forEach(q => q.classList.remove('active'));
+                    quadrant.classList.add('active');
+                    startSession(parseInt(time));
+                }
+            });
+        });
+
+        circleContainer.addEventListener('click', () => {
+            if (isSessionActive) {
+                endSession();
+            }
+        });
+
+        const techniques = [
+            { name: 'Box Breathing', id: 'box' },
+            { name: '4-7-8 Breathing', id: '478' },
+            { name: 'Wim Hof Method', id: 'wim-hof' },
+            { name: 'Tummo Breathing', id: 'tummo' }
+        ];
+        let currentTechniqueIndex = 0;
+
+        function updateTechnique() {
+            const titleElement = document.getElementById('techniqueTitle');
+            titleElement.classList.add('changing');
+            
+            setTimeout(() => {
+                const technique = techniques[currentTechniqueIndex];
+                titleElement.textContent = technique.name;
+                currentTechnique = technique.id;
+                
+                // Force a reflow to ensure the transition happens
+                titleElement.offsetHeight;
+                titleElement.classList.remove('changing');
+            }, 150);
+        }
+
+        function nextTechnique() {
+            if (!isSessionActive) {
+                currentTechniqueIndex = (currentTechniqueIndex + 1) % techniques.length;
+                updateTechnique();
+            }
+        }
+
+        function prevTechnique() {
+            if (!isSessionActive) {
+                currentTechniqueIndex = (currentTechniqueIndex - 1 + techniques.length) % techniques.length;
+                updateTechnique();
+            }
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!isSessionActive) {
+                if (e.key === 'ArrowLeft') {
+                    prevTechnique();
+                } else if (e.key === 'ArrowRight') {
+                    nextTechnique();
+                }
+            }
+        });
+
+        // Initialize first technique
+        updateTechnique();
+
+        // Theme switching functionality
+        function getAvailableThemes() {
+            const styleSheets = document.styleSheets;
+            const themes = new Set(['forest']); // Default theme is always included
+            
+            for (let sheet of styleSheets) {
+                try {
+                    const rules = sheet.cssRules || sheet.rules;
+                    for (let rule of rules) {
+                        if (rule.selectorText && rule.selectorText.includes('[data-theme="')) {
+                            const theme = rule.selectorText.match(/\[data-theme="([^"]+)"\]/)[1];
+                            themes.add(theme);
+                        }
+                    }
+                } catch (e) {
+                    console.log('Could not read stylesheet rules');
+                }
+            }
+            
+            return Array.from(themes);
+        }
+
+        let currentThemeIndex = 0;
+        const themes = getAvailableThemes();
+
+        // Create theme name display
+        const themeButton = document.getElementById('themeButton');
+        const themeNameTooltip = document.createElement('div');
+        themeNameTooltip.style.cssText = `
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: var(--quadrant-bg);
+            color: var(--text-color);
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+            border: 1px solid var(--quadrant-hover);
+            backdrop-filter: blur(4px);
+        `;
+        themeButton.appendChild(themeNameTooltip);
+
+        function updateThemeName(animate = true) {
+            const currentTheme = themes[currentThemeIndex];
+            const displayName = currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1);
+            
+            if (animate) {
+                themeNameTooltip.style.opacity = '1';
+                themeNameTooltip.style.transform = 'translateX(-50%) translateY(0)';
+                setTimeout(() => {
+                    themeNameTooltip.style.opacity = '0';
+                    themeNameTooltip.style.transform = 'translateX(-50%) translateY(-5px)';
+                }, 2000);
+            }
+            
+            themeNameTooltip.textContent = displayName;
+        }
+
+        function cycleTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const newTheme = themes[currentThemeIndex];
+            document.documentElement.dataset.theme = newTheme === 'forest' ? '' : newTheme;
+            
+            // Update and show theme name
+            updateThemeName(true);
+            
+            // Save theme preference
+            localStorage.setItem('preferredTheme', newTheme);
+        }
+
+        // Load saved theme preference
+        const savedTheme = localStorage.getItem('preferredTheme');
+        if (savedTheme && themes.includes(savedTheme)) {
+            currentThemeIndex = themes.indexOf(savedTheme);
+            document.documentElement.dataset.theme = savedTheme === 'forest' ? '' : savedTheme;
+            updateThemeName(false);
+        }
+
+        // Event listeners for theme button
+        themeButton.addEventListener('click', cycleTheme);
+        themeButton.addEventListener('mouseenter', () => updateThemeName(false));
+        themeButton.addEventListener('mouseleave', () => {
+            themeNameTooltip.style.opacity = '0';
+            themeNameTooltip.style.transform = 'translateX(-50%) translateY(-5px)';
+        });
+
+        // Add custom time modal functionality
+        const customTimeModal = document.getElementById('customTimeModal');
+        const customTimeInput = document.getElementById('customTimeInput');
+
+        function showCustomTimeModal() {
+            customTimeModal.classList.add('active');
+            customTimeInput.value = '';
+            customTimeInput.focus();
+        }
+
+        function closeCustomTimeModal() {
+            customTimeModal.classList.remove('active');
+        }
+
+        function startCustomTime() {
+            const minutes = parseInt(customTimeInput.value);
+            if (minutes && minutes > 0 && minutes <= 60) {
+                closeCustomTimeModal();
+                startSession(minutes * 60);
+            } else {
+                customTimeInput.classList.add('error');
+                setTimeout(() => customTimeInput.classList.remove('error'), 500);
+            }
+        }
+
+        // Add keyboard support for custom time modal
+        customTimeInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                startCustomTime();
+            } else if (e.key === 'Escape') {
+                closeCustomTimeModal();
+            }
+        });
+
+        // Close modal when clicking outside
+        customTimeModal.addEventListener('click', (e) => {
+            if (e.target === customTimeModal) {
+                closeCustomTimeModal();
+            }
+        });
+    </script>
+</body>
+</html>

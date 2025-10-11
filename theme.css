@@ -1,0 +1,39 @@
+:root {
+  /* base */
+  --color-text: #1f2937;            /* slate-800 */
+  --color-text-muted: #6b7280;      /* gray-500 */
+  --color-bg: #f6f8fb;              /* very light */
+  --color-surface: #ffffff;         /* cards */
+  --color-border: #e5e7eb;          /* subtle borders */
+
+  /* primary & accent (soft teal/blue) */
+  --color-primary: #0ea5a4;         /* teal-500 */
+  --color-primary-600: #0b8e8d;
+  --color-primary-700: #0a7a79;
+  --color-accent: #38bdf8;          /* sky-400 for hovers */
+  --color-accent-600: #0ea5e9;
+
+  /* feedback */
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+
+  /* priorities */
+  --priority-high: var(--color-danger);
+  --priority-medium: var(--color-warning); /* softer amber */
+  --priority-low: var(--color-success);
+
+  /* decorative */
+  --ring: rgba(14, 165, 164, 0.25);
+  --shadow-sm: 0 2px 4px rgba(2, 6, 23, 0.05);
+  --shadow-md: 0 10px 20px rgba(2, 6, 23, 0.08);
+  --shadow-lg: 0 20px 40px rgba(2, 6, 23, 0.10);
+
+  /* gradients */
+  --gradient-bg: linear-gradient(135deg, #eaf7f7 0%, #f6fbff 100%);
+  --gradient-button: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-700) 100%);
+  --gradient-button-hover: linear-gradient(135deg, var(--color-accent), var(--color-accent-600));
+  --gradient-badge: linear-gradient(135deg, #e0f2fe 0%, #cffafe 100%);
+}
+
+
