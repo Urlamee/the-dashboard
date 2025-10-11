@@ -828,6 +828,181 @@
         .modal-button.cancel:hover {
             background: var(--quadrant-hover);
         }
+
+        /* Mobile Optimization */
+        @media (max-width: 768px) {
+            .quadrant-container {
+                width: 300px;
+                height: 300px;
+            }
+
+            .technique-title {
+                font-size: 18px;
+                top: -30px;
+                white-space: nowrap;
+            }
+
+            .nav-arrow {
+                font-size: 24px;
+                padding: 8px;
+            }
+
+            .nav-arrow.left {
+                left: -40px;
+            }
+
+            .nav-arrow.right {
+                right: -40px;
+            }
+
+            #backButton,
+            #themeButton {
+                width: 2rem;
+                height: 2rem;
+            }
+
+            #backButton svg,
+            #themeButton svg {
+                width: 1rem;
+                height: 1rem;
+            }
+
+            .modal-content {
+                width: 90%;
+                padding: 1.5rem;
+            }
+
+            .modal-content h2 {
+                font-size: 1.25rem;
+            }
+
+            .modal-content input {
+                font-size: 1rem;
+            }
+
+            #guideText {
+                font-size: 1.5rem !important;
+                padding: 0 20px;
+            }
+
+            #timerBar {
+                height: 3px;
+            }
+
+            body {
+                overflow-x: hidden;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .quadrant-container {
+                width: 260px;
+                height: 260px;
+            }
+
+            .technique-title {
+                font-size: 16px;
+                top: -25px;
+            }
+
+            .nav-arrow {
+                font-size: 20px;
+                padding: 6px;
+            }
+
+            .nav-arrow.left {
+                left: -35px;
+            }
+
+            .nav-arrow.right {
+                right: -35px;
+            }
+
+            .quadrant span {
+                font-size: 14px !important;
+            }
+
+            #guideText {
+                font-size: 1.25rem !important;
+            }
+
+            #backButton,
+            #themeButton {
+                width: 1.75rem;
+                height: 1.75rem;
+                top: 0.75rem;
+            }
+
+            #backButton {
+                left: 0.75rem;
+            }
+
+            #themeButton {
+                right: 0.75rem;
+            }
+
+            .modal-content {
+                padding: 1.25rem;
+            }
+
+            .modal-content h2 {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Landscape orientation optimization */
+        @media (max-height: 600px) and (orientation: landscape) {
+            body {
+                padding-top: 10px;
+            }
+
+            .quadrant-container {
+                width: 280px;
+                height: 280px;
+            }
+
+            .technique-title {
+                top: -25px;
+                font-size: 16px;
+            }
+
+            .nav-arrow.left {
+                left: -45px;
+            }
+
+            .nav-arrow.right {
+                right: -45px;
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .quadrant:hover::before {
+                opacity: 0;
+            }
+
+            .quadrant:active::before {
+                opacity: 1;
+            }
+
+            .menu-toggle:hover {
+                transform: none;
+            }
+
+            .menu-toggle:active {
+                transform: scale(0.95);
+            }
+
+            #backButton:hover,
+            #themeButton:hover {
+                transform: none;
+            }
+
+            #backButton:active,
+            #themeButton:active {
+                transform: scale(0.9);
+            }
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen antialiased">
