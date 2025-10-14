@@ -32,6 +32,16 @@
     </header>
 
     <div class="container">
+      <div class="terminal-bar">
+        <div class="traffic-lights" aria-hidden="true">
+          <span class="dot red"></span>
+          <span class="dot yellow"></span>
+          <span class="dot green"></span>
+        </div>
+        <div class="terminal-meta">
+          <span id="terminal-clock"></span>
+        </div>
+      </div>
       <div class="terminal-body">
       <form id="todo-form">
         <div class="form-row">
@@ -40,7 +50,7 @@
             class="form-input"
             id="todo-input"
             name="todo"
-            placeholder="The Rule of Three?"
+            placeholder="new todo (supports @jasnah and #spark)…"
           />
           <button type="submit" class="submit-arrow" title="Add Task">
             <i class="fa-solid fa-arrow-right"></i>
@@ -56,16 +66,19 @@
       <ul id="todo-list" class="todos">
       </ul>
 
-      <div class="advice-icon-container">
-        <div class="advice-icon" id="advice-icon">
-          <i class="fa-solid fa-lightbulb"></i>
-        </div>
-        <div class="advice-tooltip" id="advice-tooltip">
-          <p id="advice-text"></p>
-        </div>
-      </div>
       </div>
     </div>
+
+    <footer class="app-footer" role="contentinfo">
+      <div class="footer-content">
+        <div class="advice-icon-container">
+          <span class="trademark" id="trademark-text">© 2025 Cutlac Dev App. All rights reserved.</span>
+          <div class="advice-tooltip" id="advice-tooltip">
+            <p id="advice-text"></p>
+          </div>
+        </div>
+      </div>
+    </footer>
 
     <script src="script.js"></script>
   </body>

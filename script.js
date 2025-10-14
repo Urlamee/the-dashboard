@@ -30,11 +30,16 @@ const fallbackQuotes = [
 // Store fetched quotes
 let dailyAdvice = [...fallbackQuotes];
 
+// Connection/meta for terminal bar
+let lastApiLatencyMs = null;
+let connectionStatus = '…';
+
 // Initialize app
 function init() {
   loadTodos();
   renderTodos();
   fetchQuotesFromAPI();
+  startTerminalClock();
   
   // Event listeners
   todoForm.addEventListener('submit', addTodo);
@@ -257,7 +262,10 @@ function parseCSVLine(line) {
 // Fetch quotes from Google Sheets API
 async function fetchQuotesFromAPI() {
   try {
+    const start = performance.now();
     const response = await fetch(QUOTES_API_URL);
+    lastApiLatencyMs = Math.max(0, Math.round(performance.now() - start));
+    connectionStatus = response.ok ? 'OK' : 'Error';
     const csvText = await response.text();
     
     // Parse CSV data
@@ -299,6 +307,7 @@ async function fetchQuotesFromAPI() {
   } catch (error) {
     console.log('Failed to fetch quotes from API, using fallback quotes:', error);
     dailyAdvice = [...fallbackQuotes];
+    connectionStatus = 'Offline';
   }
   
   // Set the daily advice after fetching
@@ -308,14 +317,37 @@ async function fetchQuotesFromAPI() {
 // Set daily advice
 function setDailyAdvice() {
   const adviceElement = document.getElementById('advice-text');
-  if (adviceElement && dailyAdvice.length > 0) {
+  if (dailyAdvice.length > 0) {
     // Get today's date to determine which advice to show
     const today = new Date();
     const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
     const adviceIndex = dayOfYear % dailyAdvice.length;
-    
-    adviceElement.textContent = dailyAdvice[adviceIndex];
+
+    const text = dailyAdvice[adviceIndex];
+    if (adviceElement) adviceElement.textContent = text;
   }
+}
+
+// Terminal bar clock and uptime
+function startTerminalClock() {
+  const el = document.getElementById('terminal-clock');
+  if (!el) return;
+
+  const update = () => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const day = now.toLocaleDateString(undefined, { weekday: 'short' });
+    const month = now.toLocaleDateString(undefined, { month: 'short' });
+    const date = String(now.getDate()).padStart(2, '0');
+
+    const latency = (lastApiLatencyMs == null) ? '—' : `${lastApiLatencyMs}`;
+    const conn = connectionStatus || '…';
+    el.textContent = `${hours}:${minutes} · ${day}, ${month} ${date} · Connection: ${conn} · API ~${latency} ms`;
+  };
+
+  update();
+  setInterval(update, 1000);
 }
 
 // Utility function to escape HTML
