@@ -7,11 +7,11 @@
   --color-border: #e5e7eb;          /* subtle borders */
 
   /* primary & accent (soft teal/blue) */
-  --color-primary: #0ea5a4;         /* teal-500 */
-  --color-primary-600: #0b8e8d;
-  --color-primary-700: #0a7a79;
-  --color-accent: #38bdf8;          /* sky-400 for hovers */
-  --color-accent-600: #0ea5e9;
+  --color-primary: #16a34a;         /* green-600 terminal accent */
+  --color-primary-600: #15803d;
+  --color-primary-700: #166534;
+  --color-accent: #22c55e;          /* green-500 for hovers */
+  --color-accent-600: #16a34a;
 
   /* feedback */
   --color-success: #22c55e;
@@ -30,10 +30,10 @@
   --shadow-lg: 0 20px 40px rgba(2, 6, 23, 0.10);
 
   /* gradients */
-  --gradient-bg: linear-gradient(135deg, #eaf7f7 0%, #f6fbff 100%);
+  --gradient-bg: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
   --gradient-button: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-700) 100%);
   --gradient-button-hover: linear-gradient(135deg, var(--color-accent), var(--color-accent-600));
-  --gradient-badge: linear-gradient(135deg, #e0f2fe 0%, #cffafe 100%);
+  --gradient-badge: linear-gradient(135deg, #dcfce7 0%, #f0fdf4 100%);
 }
 
 
