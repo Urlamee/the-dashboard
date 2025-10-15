@@ -85,16 +85,19 @@ function addTodo(e) {
   e.preventDefault();
   
   const text = todoInput.value.trim();
-  const priority = prioritySelect.value;
   
   if (!text) {
     alert('Please enter a todo item');
     return;
   }
   
-  // Parse @assignee and #supplier tags from the input text
+  // Parse @assignee, #supplier, and $priority tags from the input text
   const { cleanText: afterAssigneeText, assignee } = parseAssigneeFromText(text);
-  const { cleanText, supplier } = parseSupplierFromText(afterAssigneeText);
+  const { cleanText: afterSupplierText, supplier } = parseSupplierFromText(afterAssigneeText);
+  const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterSupplierText);
+  
+  // Use parsed priority if available, otherwise use select value or default to 'low'
+  const priority = parsedPriority || prioritySelect.value || 'low';
   
   const newTodo = {
     id: generateId(),
@@ -204,13 +207,29 @@ function handleTodoClick(e) {
 
 // Edit todo
 function editTodo(todo) {
-  const newText = prompt('Edit todo:', todo.text + (todo.assignee ? ` @${todo.assignee}` : '') + (todo.supplier ? ` #${todo.supplier}` : ''));
+  // Get priority number for display
+  const priorityNumMap = {
+    'high': '1',
+    'medium': '2',
+    'low': '3'
+  };
+  const priorityNum = priorityNumMap[todo.priority] || '3';
+  
+  const currentText = todo.text + 
+    (todo.assignee ? ` @${todo.assignee}` : '') + 
+    (todo.supplier ? ` #${todo.supplier}` : '') + 
+    ` $${priorityNum}`;
+  
+  const newText = prompt('Edit todo:', currentText);
   if (newText !== null && newText.trim()) {
     const { cleanText: afterAssigneeText, assignee } = parseAssigneeFromText(newText.trim());
-    const { cleanText, supplier } = parseSupplierFromText(afterAssigneeText);
+    const { cleanText: afterSupplierText, supplier } = parseSupplierFromText(afterAssigneeText);
+    const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterSupplierText);
+    
     todo.text = cleanText;
     todo.assignee = assignee || null;
     todo.supplier = supplier || null;
+    todo.priority = parsedPriority || todo.priority; // Keep existing priority if not specified
     saveTodos();
     renderTodos();
   }
@@ -393,6 +412,26 @@ function parseSupplierFromText(input) {
   const supplier = match[1];
   const cleanText = input.replace(regex, (m) => m.replace(/#([A-Za-z0-9_\-]+)/, '').trim()).replace(/\s{2,}/g, ' ').trim();
   return { cleanText, supplier };
+}
+
+// Parse $priority from text. Returns { cleanText, priority }
+// $1 = high, $2 = medium, $3 = low
+function parsePriorityFromText(input) {
+  const regex = /\s*\$([123])\s*/;
+  const match = input.match(regex);
+  if (!match) {
+    return { cleanText: input, priority: null };
+  }
+
+  const priorityNum = match[1];
+  const priorityMap = {
+    '1': 'high',
+    '2': 'medium',
+    '3': 'low'
+  };
+  const priority = priorityMap[priorityNum];
+  const cleanText = input.replace(regex, ' ').replace(/\s{2,}/g, ' ').trim();
+  return { cleanText, priority };
 }
 
 // Initialize the app when DOM is loaded
