@@ -30,15 +30,31 @@ const fallbackQuotes = [
 // Store fetched quotes
 let dailyAdvice = [...fallbackQuotes];
 
-// Connection/meta for terminal bar
-let lastApiLatencyMs = null;
-let connectionStatus = '…';
+// Git repository information for terminal bar
+// Configure your repository information here
+const GIT_CONFIG = {
+  owner: 'Urlamee', // Replace with your GitHub username
+  repo: 'the-dashboard', // Replace with your repository name
+  branch: 'main' // Replace with your default branch
+};
+
+// Git info state
+let gitInfo = {
+  commitHash: '…',
+  fullHash: '…',
+  commitMessage: '',
+  commitCount: 0,
+  pushTimestamp: '…',
+  authorName: '…',
+  branch: GIT_CONFIG.branch
+};
 
 // Initialize app
 function init() {
   loadTodos();
   renderTodos();
   fetchQuotesFromAPI();
+  fetchGitInfo();
   startTerminalClock();
   
   // Event listeners
@@ -278,13 +294,113 @@ function parseCSVLine(line) {
   return result;
 }
 
+// Fetch Git repository information from GitHub API
+async function fetchGitInfo() {
+  try {
+    // Fetch the latest commit from the default branch
+    const commitUrl = `https://api.github.com/repos/${GIT_CONFIG.owner}/${GIT_CONFIG.repo}/commits/${GIT_CONFIG.branch}`;
+    const commitResponse = await fetch(commitUrl);
+    
+    if (commitResponse.ok) {
+      const data = await commitResponse.json();
+      
+      // Extract commit information
+      gitInfo.fullHash = data.sha;
+      gitInfo.commitHash = data.sha.substring(0, 7); // Short hash (first 7 chars)
+      gitInfo.commitMessage = data.commit.message || 'No commit message';
+      gitInfo.authorName = data.commit.author.name;
+      
+      // Format timestamp
+      const pushDate = new Date(data.commit.author.date);
+      gitInfo.pushTimestamp = formatRelativeTime(pushDate);
+      
+      // Fetch commit count
+      const commitsUrl = `https://api.github.com/repos/${GIT_CONFIG.owner}/${GIT_CONFIG.repo}/commits?sha=${GIT_CONFIG.branch}&per_page=1`;
+      const commitsResponse = await fetch(commitsUrl);
+      
+      if (commitsResponse.ok) {
+        // Get the Link header which contains pagination info
+        const linkHeader = commitsResponse.headers.get('Link');
+        if (linkHeader) {
+          // Parse the last page number from Link header
+          const lastPageMatch = linkHeader.match(/page=(\d+)>; rel="last"/);
+          if (lastPageMatch) {
+            gitInfo.commitCount = parseInt(lastPageMatch[1]);
+          } else {
+            gitInfo.commitCount = 1; // Only one page means very few commits
+          }
+        } else {
+          gitInfo.commitCount = 1;
+        }
+      }
+      
+      console.log('Git info loaded successfully:', gitInfo);
+      updateVersionDisplay();
+    } else {
+      console.log('Failed to fetch git info from GitHub API');
+      gitInfo.commitHash = 'local';
+      gitInfo.fullHash = '';
+      gitInfo.commitMessage = '';
+      gitInfo.commitCount = 0;
+      gitInfo.pushTimestamp = 'unknown';
+      gitInfo.authorName = 'dev';
+      updateVersionDisplay();
+    }
+  } catch (error) {
+    console.log('Error fetching git info:', error);
+    gitInfo.commitHash = 'local';
+    gitInfo.fullHash = '';
+    gitInfo.commitMessage = '';
+    gitInfo.commitCount = 0;
+    gitInfo.pushTimestamp = 'unknown';
+    gitInfo.authorName = 'dev';
+    updateVersionDisplay();
+  }
+}
+
+// Format relative time (e.g., "2 hours ago", "3 days ago")
+function formatRelativeTime(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+  
+  if (diffSec < 60) return 'just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHour < 24) return `${diffHour}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  
+  // For older dates, show the actual date
+  const month = date.toLocaleDateString(undefined, { month: 'short' });
+  const day = date.getDate();
+  return `${month} ${day}`;
+}
+
+// Update version display in footer
+function updateVersionDisplay() {
+  const versionEl = document.getElementById('version-number');
+  const versionHashEl = document.getElementById('version-hash-text');
+  if (!versionEl) return;
+  
+  if (gitInfo.commitCount > 0) {
+    versionEl.textContent = `v1.${gitInfo.commitCount}-${gitInfo.commitHash}`;
+    if (versionHashEl && gitInfo.commitMessage) {
+      versionHashEl.textContent = gitInfo.commitMessage;
+    }
+  } else {
+    versionEl.textContent = 'v1.0-dev';
+    if (versionHashEl) {
+      versionHashEl.textContent = 'Development version';
+    }
+  }
+}
+
 // Fetch quotes from Google Sheets API
 async function fetchQuotesFromAPI() {
   try {
-    const start = performance.now();
     const response = await fetch(QUOTES_API_URL);
-    lastApiLatencyMs = Math.max(0, Math.round(performance.now() - start));
-    connectionStatus = response.ok ? 'OK' : 'Error';
     const csvText = await response.text();
     
     // Parse CSV data
@@ -326,7 +442,6 @@ async function fetchQuotesFromAPI() {
   } catch (error) {
     console.log('Failed to fetch quotes from API, using fallback quotes:', error);
     dailyAdvice = [...fallbackQuotes];
-    connectionStatus = 'Offline';
   }
   
   // Set the daily advice after fetching
@@ -347,7 +462,7 @@ function setDailyAdvice() {
   }
 }
 
-// Terminal bar clock and uptime
+// Terminal bar clock and git info display
 function startTerminalClock() {
   const el = document.getElementById('terminal-clock');
   if (!el) return;
@@ -360,9 +475,11 @@ function startTerminalClock() {
     const month = now.toLocaleDateString(undefined, { month: 'short' });
     const date = String(now.getDate()).padStart(2, '0');
 
-    const latency = (lastApiLatencyMs == null) ? '—' : `${lastApiLatencyMs}`;
-    const conn = connectionStatus || '…';
-    el.textContent = `${hours}:${minutes} · ${day}, ${month} ${date} · Connection: ${conn} · API ~${latency} ms`;
+    // Display git information (commit hash now in footer)
+    const timestamp = gitInfo.pushTimestamp || '…';
+    const author = gitInfo.authorName || '…';
+    
+    el.textContent = `${hours}:${minutes} · ${day}, ${month} ${date} · Last push: ${timestamp} · @${author}`;
   };
 
   update();

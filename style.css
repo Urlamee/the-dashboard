@@ -45,6 +45,23 @@ body {
   color: #111827;
 }
 
+.footer-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.trademark-container {
+  position: relative;
+  display: inline-block;
+}
+
+.version-container {
+  position: relative;
+  display: inline-block;
+}
+
 .footer-label {
   font-weight: 600;
   color: var(--color-primary);
@@ -158,7 +175,8 @@ body {
   border-radius: 12px;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--color-border);
-  overflow: hidden;
+  overflow: visible;
+  position: relative;
 }
 
 /* Terminal chrome */
@@ -173,6 +191,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
 }
 
 .traffic-lights {
@@ -201,6 +221,8 @@ body {
 
 .container .terminal-body {
   padding: 20px 24px 28px 24px;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
 }
 
 .edit-mode {
@@ -549,14 +571,7 @@ body {
   gap: 5px;
 }
 
-/* Advice Icon */
-.advice-icon-container {
-  position: relative;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-}
-
+/* Advice Icon (legacy - kept for reference) */
 .advice-icon {
   width: 40px;
   height: 40px;
@@ -614,10 +629,79 @@ body {
 
 .trademark:hover {
   color: #374151;
+  text-decoration: underline dotted;
 }
 
-.advice-icon-container:hover .trademark {
-  text-decoration: underline dotted;
+/* Show tooltip only when hovering over trademark */
+.trademark-container:hover .advice-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-5px);
+}
+
+.version-number {
+  color: var(--color-primary);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  cursor: help;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  display: inline-block;
+  border: 1px solid transparent;
+}
+
+.version-number:hover {
+  background: #f0fdf4;
+  border-color: var(--color-primary);
+  transform: scale(1.05);
+}
+
+.version-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #ffffff;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: 1px solid #0f172a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  width: 280px;
+  max-width: 90vw;
+  z-index: 1000;
+  pointer-events: none;
+  font-size: 11px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.version-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #111827;
+}
+
+.version-tooltip p {
+  margin: 0;
+  font-weight: 500;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.version-container:hover .version-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-5px);
 }
 
 .advice-tooltip::after {
@@ -629,12 +713,6 @@ body {
   border: 8px solid transparent;
   border-top-color: #111827;
   opacity: 0.7;
-}
-
-.advice-icon-container:hover .advice-tooltip {
-  opacity: 1;
-  visibility: visible;
-  transform: translateX(-50%) translateY(-5px);
 }
 
 .advice-text {
