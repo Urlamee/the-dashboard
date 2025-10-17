@@ -94,26 +94,15 @@
 
     <script src="auth.js"></script>
     <script>
-      // Check authentication before page loads
-      (function() {
-        try {
-          requireAuth();
-        } catch (error) {
-          console.error('Auth check failed:', error);
-        }
-      })();
+      // Check if logged in
+      checkAuth();
       
-      // Setup logout button
+      // Logout button
       document.addEventListener('DOMContentLoaded', () => {
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-          logoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (confirm('Are you sure you want to log out?')) {
-              logout();
-            }
-          });
-        }
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+          e.preventDefault();
+          logout();
+        });
       });
     </script>
     <script src="script.js"></script>

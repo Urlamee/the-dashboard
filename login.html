@@ -2,137 +2,92 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
-      integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
       crossorigin="anonymous"
-      referrerpolicy="no-referrer"
     />
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="style.css" />
     <title>Login - Dashboard</title>
     <style>
-      /* Login-specific styles */
       .login-container {
-        max-width: 420px;
-        width: 100%;
-        padding: 0;
-        background: var(--color-surface);
+        max-width: 400px;
+        width: 90%;
+        margin: 50px auto;
+        padding: 40px;
+        background: white;
         border-radius: 12px;
-        box-shadow: var(--shadow-lg);
-        border: 1px solid var(--color-border);
-        overflow: hidden;
-        margin: 20px auto;
-      }
-
-      .login-body {
-        padding: 40px 32px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
       }
 
       .login-header {
         text-align: center;
-        margin-bottom: 32px;
+        margin-bottom: 30px;
       }
 
       .login-title {
         font-size: 28px;
         font-weight: 600;
         color: #111827;
-        margin-bottom: 8px;
+        margin-bottom: 10px;
       }
 
       .login-subtitle {
         font-size: 14px;
-        color: var(--color-text-muted);
-      }
-
-      .login-form {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
+        color: #6b7280;
       }
 
       .form-group {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+        margin-bottom: 20px;
       }
 
       .form-label {
+        display: block;
         font-size: 14px;
         font-weight: 500;
         color: #374151;
+        margin-bottom: 6px;
       }
 
-      .password-input-wrapper {
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-
-      .password-input {
-        flex: 1;
-        font-size: 16px;
-        padding: 12px 45px 12px 15px;
-        border: 1px solid var(--color-border);
+      .form-input {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d1d5db;
         border-radius: 6px;
-        outline: none;
-        transition: border-color 0.3s ease;
-        background: #fff;
+        font-size: 16px;
         font-family: 'JetBrains Mono', monospace;
       }
 
-      .password-input:focus {
+      .form-input:focus {
+        outline: none;
         border-color: var(--color-primary);
-        box-shadow: 0 0 0 3px var(--ring);
-      }
-
-      .password-toggle {
-        position: absolute;
-        right: 12px;
-        background: none;
-        border: none;
-        color: #6b7280;
-        cursor: pointer;
-        padding: 5px;
-        transition: color 0.3s ease;
-      }
-
-      .password-toggle:hover {
-        color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
       }
 
       .login-button {
         width: 100%;
-        font-size: 16px;
-        font-weight: 500;
-        padding: 14px 20px;
+        padding: 14px;
         background: var(--color-primary);
-        color: #ffffff;
+        color: white;
         border: none;
         border-radius: 6px;
+        font-size: 16px;
+        font-weight: 500;
         cursor: pointer;
-        transition: all 0.3s ease;
-        box-shadow: var(--shadow-sm);
+        font-family: 'JetBrains Mono', monospace;
       }
 
       .login-button:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
         background: #16a34a;
-      }
-
-      .login-button:active {
-        transform: translateY(0);
-        box-shadow: var(--shadow-sm);
       }
 
       .error-message {
         display: none;
-        padding: 12px 16px;
+        padding: 12px;
+        margin-bottom: 20px;
         background: #fef2f2;
         border: 1px solid #fecaca;
         border-radius: 6px;
@@ -143,171 +98,80 @@
 
       .error-message.show {
         display: block;
-        animation: shake 0.3s ease;
-      }
-
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        25% { transform: translateX(-10px); }
-        75% { transform: translateX(10px); }
-      }
-
-      .login-footer {
-        text-align: center;
-        margin-top: 24px;
-        padding-top: 24px;
-        border-top: 1px solid var(--color-border);
-      }
-
-      .login-footer-text {
-        font-size: 12px;
-        color: var(--color-text-muted);
       }
 
       .lock-icon {
-        display: flex;
-        justify-content: center;
-        margin-bottom: 20px;
-      }
-
-      .lock-icon i {
         font-size: 48px;
         color: var(--color-primary);
-        opacity: 0.8;
-      }
-
-      /* Loading state */
-      .login-button:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none !important;
+        margin-bottom: 20px;
       }
     </style>
   </head>
   <body>
     <div class="login-container">
-      <div class="login-body">
+      <div class="login-header">
         <div class="lock-icon">
           <i class="fa-solid fa-lock"></i>
         </div>
-        
-        <div class="login-header">
-          <h1 class="login-title">Welcome Back</h1>
-          <p class="login-subtitle">Enter your password to access the dashboard</p>
-        </div>
-
-        <div id="error-message" class="error-message"></div>
-
-        <form id="login-form" class="login-form">
-          <div class="form-group">
-            <label for="password" class="form-label">Password</label>
-            <div class="password-input-wrapper">
-              <input
-                type="password"
-                id="password"
-                class="password-input"
-                placeholder="Enter your password"
-                required
-                autocomplete="current-password"
-                autofocus
-              />
-              <button type="button" class="password-toggle" id="password-toggle" aria-label="Toggle password visibility">
-                <i class="fa-solid fa-eye"></i>
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="login-button" id="login-button">
-            <i class="fa-solid fa-arrow-right-to-bracket"></i>
-            Login
-          </button>
-        </form>
-
-        <div class="login-footer">
-          <p class="login-footer-text">
-            <i class="fa-solid fa-shield-halved"></i>
-            Secured with SHA-256 encryption
-          </p>
-        </div>
+        <h1 class="login-title">Welcome</h1>
+        <p class="login-subtitle">Please login to continue</p>
       </div>
+
+      <div id="error-message" class="error-message">Incorrect username or password</div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username" class="form-label">Username</label>
+          <input
+            type="text"
+            id="username"
+            class="form-input"
+            placeholder="admin"
+            required
+            autofocus
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Password</label>
+          <input
+            type="password"
+            id="password"
+            class="form-input"
+            placeholder="Enter password"
+            required
+          />
+        </div>
+
+        <button type="submit" class="login-button">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Login
+        </button>
+      </form>
     </div>
-
-    <footer class="app-footer" role="contentinfo">
-      <div class="footer-content">
-        <div class="footer-info">
-          <div class="trademark-container">
-            <span class="trademark">© 2025 Cutlac Dev App. All rights reserved.</span>
-          </div>
-        </div>
-      </div>
-    </footer>
 
     <script src="auth.js"></script>
     <script>
-      // Check if already logged in
-      if (checkAuth()) {
+      // If already logged in, go to dashboard
+      if (isLoggedIn()) {
         window.location.href = 'index.html';
       }
 
-      // Password toggle
-      const passwordInput = document.getElementById('password');
-      const passwordToggle = document.getElementById('password-toggle');
-      const toggleIcon = passwordToggle.querySelector('i');
-
-      passwordToggle.addEventListener('click', () => {
-        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-        passwordInput.setAttribute('type', type);
-        
-        if (type === 'password') {
-          toggleIcon.classList.remove('fa-eye-slash');
-          toggleIcon.classList.add('fa-eye');
-        } else {
-          toggleIcon.classList.remove('fa-eye');
-          toggleIcon.classList.add('fa-eye-slash');
-        }
-      });
-
-      // Login form handler
-      const loginForm = document.getElementById('login-form');
-      const loginButton = document.getElementById('login-button');
-      const errorMessage = document.getElementById('error-message');
-
-      loginForm.addEventListener('submit', async (e) => {
+      // Handle login form
+      document.getElementById('login-form').addEventListener('submit', (e) => {
         e.preventDefault();
         
-        const password = passwordInput.value;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const errorMsg = document.getElementById('error-message');
         
-        // Disable button and show loading state
-        loginButton.disabled = true;
-        loginButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Verifying...';
-        
-        // Hide previous error
-        errorMessage.classList.remove('show');
-        
-        // Small delay for better UX
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Attempt login
-        const success = await login(password);
-        
-        if (success) {
-          // Success - redirect to dashboard
-          loginButton.innerHTML = '<i class="fa-solid fa-check"></i> Success!';
-          await new Promise(resolve => setTimeout(resolve, 500));
+        if (login(username, password)) {
           window.location.href = 'index.html';
         } else {
-          // Failed - show error
-          errorMessage.textContent = 'Incorrect password. Please try again.';
-          errorMessage.classList.add('show');
-          passwordInput.value = '';
-          passwordInput.focus();
-          
-          // Re-enable button
-          loginButton.disabled = false;
-          loginButton.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Login';
+          errorMsg.classList.add('show');
+          document.getElementById('password').value = '';
+          document.getElementById('password').focus();
         }
       });
     </script>
   </body>
 </html>
-
