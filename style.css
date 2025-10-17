@@ -150,11 +150,23 @@ body {
   text-decoration: none;
   transition: all 0.3s ease;
   font-weight: 500;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
 }
 
 .nav-link:hover {
   background: #f0fdf4;
   color: var(--color-primary);
+}
+
+.logout-btn:hover {
+  background: #fef2f2;
+  color: #dc2626;
 }
 
 .nav-link i {

@@ -28,6 +28,10 @@
           <i class="fa-solid fa-spa"></i>
           <span>Breathing Exercises</span>
         </a>
+        <button class="nav-link logout-btn" id="logoutBtn">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Logout</span>
+        </button>
       </nav>
     </header>
 
@@ -88,6 +92,24 @@
       </div>
     </footer>
 
+    <script src="auth.js"></script>
+    <script>
+      // Require authentication before loading the app
+      requireAuth();
+      
+      // Setup logout button
+      document.addEventListener('DOMContentLoaded', () => {
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) {
+          logoutBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (confirm('Are you sure you want to log out?')) {
+              logout();
+            }
+          });
+        }
+      });
+    </script>
     <script src="script.js"></script>
   </body>
 </html>
