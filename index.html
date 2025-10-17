@@ -94,8 +94,14 @@
 
     <script src="auth.js"></script>
     <script>
-      // Require authentication before loading the app
-      requireAuth();
+      // Check authentication before page loads
+      (function() {
+        try {
+          requireAuth();
+        } catch (error) {
+          console.error('Auth check failed:', error);
+        }
+      })();
       
       // Setup logout button
       document.addEventListener('DOMContentLoaded', () => {
