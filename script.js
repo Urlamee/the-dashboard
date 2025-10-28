@@ -50,9 +50,8 @@ let gitInfo = {
 };
 
 // Initialize app
-function init() {
-  loadTodos();
-  renderTodos();
+async function init() {
+  await loadTodos();
   fetchQuotesFromAPI();
   fetchGitInfo();
   startTerminalClock();
@@ -78,17 +77,15 @@ function init() {
   });
 }
 
-// Load todos from localStorage
-function loadTodos() {
-  const stored = localStorage.getItem('todos');
-  if (stored) {
-    todos = JSON.parse(stored);
-  }
+// Load todos (now uses storage.js which handles Supabase + localStorage)
+async function loadTodos() {
+  todos = await loadTodosFromStorage();
+  renderTodos();
 }
 
-// Save todos to localStorage
-function saveTodos() {
-  localStorage.setItem('todos', JSON.stringify(todos));
+// Save todos (now uses storage.js which handles Supabase + localStorage)
+async function saveTodos() {
+  await saveTodosToStorage(todos);
 }
 
 // Generate unique ID
@@ -97,7 +94,7 @@ function generateId() {
 }
 
 // Add new todo
-function addTodo(e) {
+async function addTodo(e) {
   e.preventDefault();
   
   const text = todoInput.value.trim();
@@ -126,7 +123,7 @@ function addTodo(e) {
   };
   
   todos.unshift(newTodo);
-  saveTodos();
+  await saveTodos();
   renderTodos();
   
   todoInput.value = '';
@@ -195,7 +192,7 @@ function createTodoElement(todo) {
 }
 
 // Handle todo item clicks
-function handleTodoClick(e) {
+async function handleTodoClick(e) {
   const todoItem = e.target.closest('.todo-item');
   if (!todoItem) return;
   
@@ -205,24 +202,24 @@ function handleTodoClick(e) {
   if (e.target.classList.contains('todo-checkbox')) {
     // Toggle completion
     todo.completed = !todo.completed;
-    saveTodos();
+    await saveTodos();
     renderTodos();
   } else if (e.target.closest('.edit-btn')) {
     // Edit todo
-    editTodo(todo);
+    await editTodo(todo);
   } else if (e.target.closest('.remove-btn')) {
     // Remove todo
-    removeTodo(todoId);
+    await removeTodo(todoId);
   } else if (e.target.classList.contains('todo-priority')) {
     // Change priority
-    changePriority(todo);
+    await changePriority(todo);
   } else {
     // Do nothing; only the checkbox toggles completion
   }
 }
 
 // Edit todo
-function editTodo(todo) {
+async function editTodo(todo) {
   // Get priority number for display
   const priorityNumMap = {
     'high': '1',
@@ -246,27 +243,27 @@ function editTodo(todo) {
     todo.assignee = assignee || null;
     todo.supplier = supplier || null;
     todo.priority = parsedPriority || todo.priority; // Keep existing priority if not specified
-    saveTodos();
+    await saveTodos();
     renderTodos();
   }
 }
 
 // Remove todo
-function removeTodo(todoId) {
+async function removeTodo(todoId) {
   if (confirm('Are you sure you want to delete this todo?')) {
     todos = todos.filter(todo => todo.id !== todoId);
-    saveTodos();
+    await saveTodos();
     renderTodos();
   }
 }
 
 // Change priority
-function changePriority(todo) {
+async function changePriority(todo) {
   const priorities = ['low', 'medium', 'high'];
   const currentIndex = priorities.indexOf(todo.priority);
   const nextIndex = (currentIndex + 1) % priorities.length;
   todo.priority = priorities[nextIndex];
-  saveTodos();
+  await saveTodos();
   renderTodos();
 }
 
