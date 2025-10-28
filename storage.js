@@ -1,4 +1,5 @@
 // Storage utility with Supabase cloud storage and localStorage fallback
+// Version: 2.0 - Fixed UPSERT logic
 // Configure your Supabase credentials below
 
 const SUPABASE_CONFIG = {
@@ -72,24 +73,41 @@ async function saveTodosToSupabase(todos) {
   try {
     console.log(`🔄 Syncing ${todos.length} todos to Supabase...`);
     
+    // If no todos, clear Supabase by deleting all (with proper WHERE clause)
     if (todos.length === 0) {
-      // If no todos, delete all existing ones
-      const deleteResponse = await fetch(
-        `${SUPABASE_CONFIG.url}/rest/v1/todos?id=neq.`,
+      // Get all existing IDs first, then delete them
+      const existingResponse = await fetch(
+        `${SUPABASE_CONFIG.url}/rest/v1/todos?select=id`,
         {
-          method: 'DELETE',
           headers: {
             'apikey': SUPABASE_CONFIG.anonKey,
             'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-            'Prefer': 'return=minimal'
+            'Content-Type': 'application/json'
           }
         }
       );
       
-      if (deleteResponse.ok || deleteResponse.status === 204) {
-        console.log('✅ Cleared all todos from Supabase');
-        return true;
+      if (existingResponse.ok) {
+        const existing = await existingResponse.json();
+        if (existing.length > 0) {
+          // Delete each one individually (Supabase requires WHERE clause)
+          for (const item of existing) {
+            await fetch(
+              `${SUPABASE_CONFIG.url}/rest/v1/todos?id=eq.${item.id}`,
+              {
+                method: 'DELETE',
+                headers: {
+                  'apikey': SUPABASE_CONFIG.anonKey,
+                  'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+                  'Prefer': 'return=minimal'
+                }
+              }
+            );
+          }
+          console.log(`✅ Cleared ${existing.length} todos from Supabase`);
+        }
       }
+      return true;
     }
 
     // Get current todos to find ones that need to be deleted
