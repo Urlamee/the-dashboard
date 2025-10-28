@@ -1,0 +1,14 @@
+# Windows system files
+desktop.ini
+**/desktop.ini
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Node modules (if you add them later)
+node_modules/
+
