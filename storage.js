@@ -72,30 +72,68 @@ async function saveTodosToSupabase(todos) {
   try {
     console.log(`🔄 Syncing ${todos.length} todos to Supabase...`);
     
-    // First, delete all existing todos
-    const deleteResponse = await fetch(
-      `${SUPABASE_CONFIG.url}/rest/v1/todos`,
+    if (todos.length === 0) {
+      // If no todos, delete all existing ones
+      const deleteResponse = await fetch(
+        `${SUPABASE_CONFIG.url}/rest/v1/todos?id=neq.`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_CONFIG.anonKey,
+            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+            'Prefer': 'return=minimal'
+          }
+        }
+      );
+      
+      if (deleteResponse.ok || deleteResponse.status === 204) {
+        console.log('✅ Cleared all todos from Supabase');
+        return true;
+      }
+    }
+
+    // Get current todos to find ones that need to be deleted
+    const existingResponse = await fetch(
+      `${SUPABASE_CONFIG.url}/rest/v1/todos?select=id`,
       {
-        method: 'DELETE',
         headers: {
           'apikey': SUPABASE_CONFIG.anonKey,
           'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-          'Prefer': 'return=minimal'
+          'Content-Type': 'application/json'
         }
       }
     );
 
-    if (!deleteResponse.ok && deleteResponse.status !== 204) {
-      const errorText = await deleteResponse.text();
-      console.warn('⚠️ Failed to clear existing todos:', errorText);
-      // Don't return false here - might be a permission issue but we can still try to insert
-    } else {
-      console.log('✅ Cleared existing todos from Supabase');
+    let todosToDelete = [];
+    if (existingResponse.ok) {
+      const existing = await existingResponse.json();
+      const currentIds = new Set(todos.map(t => t.id));
+      todosToDelete = existing.filter(item => !currentIds.has(item.id)).map(item => item.id);
     }
 
-    // Then insert all todos (Supabase supports batch inserts with array)
+    // Delete todos that no longer exist
+    if (todosToDelete.length > 0) {
+      for (const id of todosToDelete) {
+        await fetch(
+          `${SUPABASE_CONFIG.url}/rest/v1/todos?id=eq.${id}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'apikey': SUPABASE_CONFIG.anonKey,
+              'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+              'Prefer': 'return=minimal'
+            }
+          }
+        );
+      }
+      if (todosToDelete.length > 0) {
+        console.log(`🗑️ Deleted ${todosToDelete.length} removed todos from Supabase`);
+      }
+    }
+
+    // Upsert (insert or update) all todos using PATCH with ON CONFLICT
     if (todos.length > 0) {
-      const todosToInsert = todos.map(todo => ({
+      const todosToUpsert = todos.map(todo => ({
         id: todo.id,
         text: todo.text,
         assignee: todo.assignee || null,
@@ -105,7 +143,8 @@ async function saveTodosToSupabase(todos) {
         created_at: todo.createdAt || new Date().toISOString()
       }));
 
-      const insertResponse = await fetch(
+      // Use UPSERT strategy: POST with resolution=merge-duplicates header
+      const upsertResponse = await fetch(
         `${SUPABASE_CONFIG.url}/rest/v1/todos`,
         {
           method: 'POST',
@@ -113,25 +152,79 @@ async function saveTodosToSupabase(todos) {
             'apikey': SUPABASE_CONFIG.anonKey,
             'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
             'Content-Type': 'application/json',
-            'Prefer': 'return=representation'
+            'Prefer': 'resolution=merge-duplicates,return=representation'
           },
-          body: JSON.stringify(todosToInsert)
+          body: JSON.stringify(todosToUpsert)
         }
       );
 
-      if (!insertResponse.ok) {
-        const errorText = await insertResponse.text();
-        console.error('❌ Failed to save to Supabase:', errorText);
-        console.error('Response status:', insertResponse.status);
-        return false;
+      if (!upsertResponse.ok) {
+        // If merge-duplicates doesn't work, try individual upserts
+        console.log('⚠️ Batch upsert failed, trying individual updates...');
+        
+        let successCount = 0;
+        for (const todo of todosToUpsert) {
+          // Try to update first
+          const updateResponse = await fetch(
+            `${SUPABASE_CONFIG.url}/rest/v1/todos?id=eq.${todo.id}`,
+            {
+              method: 'PATCH',
+              headers: {
+                'apikey': SUPABASE_CONFIG.anonKey,
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+              },
+              body: JSON.stringify({
+                text: todo.text,
+                assignee: todo.assignee,
+                supplier: todo.supplier,
+                priority: todo.priority,
+                completed: todo.completed,
+                created_at: todo.created_at
+              })
+            }
+          );
+
+          if (updateResponse.ok) {
+            successCount++;
+          } else {
+            // If update fails, try insert
+            const insertResponse = await fetch(
+              `${SUPABASE_CONFIG.url}/rest/v1/todos`,
+              {
+                method: 'POST',
+                headers: {
+                  'apikey': SUPABASE_CONFIG.anonKey,
+                  'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+                  'Content-Type': 'application/json',
+                  'Prefer': 'return=representation'
+                },
+                body: JSON.stringify([todo])
+              }
+            );
+
+            if (insertResponse.ok) {
+              successCount++;
+            }
+          }
+        }
+
+        if (successCount === todos.length) {
+          console.log(`✅ Successfully synced ${successCount} todos to Supabase (individual upserts)`);
+          return true;
+        } else {
+          console.error(`❌ Failed to sync some todos: ${successCount}/${todos.length} succeeded`);
+          return false;
+        }
+      } else {
+        const savedData = await upsertResponse.json();
+        console.log(`✅ Successfully synced ${savedData.length} todos to Supabase`);
+        return true;
       }
-      
-      const savedData = await insertResponse.json();
-      console.log(`✅ Successfully saved ${savedData.length} todos to Supabase`);
-      return true;
     } else {
-      console.log('✅ No todos to save (list is empty)');
-      return true; // Empty list is fine
+      console.log('✅ No todos to sync (list is empty)');
+      return true;
     }
   } catch (error) {
     console.error('❌ Error saving to Supabase:', error);
