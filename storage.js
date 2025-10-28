@@ -24,6 +24,7 @@ async function loadTodosFromSupabase() {
   }
 
   try {
+    console.log('🔄 Loading todos from Supabase...');
     const response = await fetch(
       `${SUPABASE_CONFIG.url}/rest/v1/todos?order=created_at.desc&limit=1000`,
       {
@@ -38,6 +39,7 @@ async function loadTodosFromSupabase() {
 
     if (response.ok) {
       const data = await response.json();
+      console.log(`✅ Loaded ${data.length} todos from Supabase`);
       // Convert Supabase format to app format
       return data.map(item => ({
         id: item.id,
@@ -49,11 +51,13 @@ async function loadTodosFromSupabase() {
         createdAt: item.created_at
       }));
     } else {
-      console.error('Failed to load from Supabase:', await response.text());
+      const errorText = await response.text();
+      console.error('❌ Failed to load from Supabase:', errorText);
+      console.error('Response status:', response.status);
       return null;
     }
   } catch (error) {
-    console.error('Error loading from Supabase:', error);
+    console.error('❌ Error loading from Supabase:', error);
     return null;
   }
 }
@@ -61,10 +65,13 @@ async function loadTodosFromSupabase() {
 // Save todos to Supabase
 async function saveTodosToSupabase(todos) {
   if (!isSupabaseConfigured()) {
+    console.log('Supabase not configured, skipping cloud save');
     return false;
   }
 
   try {
+    console.log(`🔄 Syncing ${todos.length} todos to Supabase...`);
+    
     // First, delete all existing todos
     const deleteResponse = await fetch(
       `${SUPABASE_CONFIG.url}/rest/v1/todos`,
@@ -79,19 +86,23 @@ async function saveTodosToSupabase(todos) {
     );
 
     if (!deleteResponse.ok && deleteResponse.status !== 204) {
-      console.warn('Failed to clear existing todos:', await deleteResponse.text());
+      const errorText = await deleteResponse.text();
+      console.warn('⚠️ Failed to clear existing todos:', errorText);
+      // Don't return false here - might be a permission issue but we can still try to insert
+    } else {
+      console.log('✅ Cleared existing todos from Supabase');
     }
 
-    // Then insert all todos
+    // Then insert all todos (Supabase supports batch inserts with array)
     if (todos.length > 0) {
       const todosToInsert = todos.map(todo => ({
         id: todo.id,
         text: todo.text,
-        assignee: todo.assignee,
-        supplier: todo.supplier,
-        priority: todo.priority,
-        completed: todo.completed,
-        created_at: todo.createdAt
+        assignee: todo.assignee || null,
+        supplier: todo.supplier || null,
+        priority: todo.priority || 'low',
+        completed: todo.completed || false,
+        created_at: todo.createdAt || new Date().toISOString()
       }));
 
       const insertResponse = await fetch(
@@ -102,21 +113,28 @@ async function saveTodosToSupabase(todos) {
             'apikey': SUPABASE_CONFIG.anonKey,
             'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
             'Content-Type': 'application/json',
-            'Prefer': 'return=minimal'
+            'Prefer': 'return=representation'
           },
           body: JSON.stringify(todosToInsert)
         }
       );
 
       if (!insertResponse.ok) {
-        console.error('Failed to save to Supabase:', await insertResponse.text());
+        const errorText = await insertResponse.text();
+        console.error('❌ Failed to save to Supabase:', errorText);
+        console.error('Response status:', insertResponse.status);
         return false;
       }
+      
+      const savedData = await insertResponse.json();
+      console.log(`✅ Successfully saved ${savedData.length} todos to Supabase`);
+      return true;
+    } else {
+      console.log('✅ No todos to save (list is empty)');
+      return true; // Empty list is fine
     }
-
-    return true;
   } catch (error) {
-    console.error('Error saving to Supabase:', error);
+    console.error('❌ Error saving to Supabase:', error);
     return false;
   }
 }
