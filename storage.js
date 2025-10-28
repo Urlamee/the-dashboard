@@ -300,8 +300,11 @@ CREATE POLICY "Allow anonymous access" ON todos
   }
 }
 
-// Make test function globally accessible
-window.testSupabaseConnection = testSupabaseConnection;
+// Make test function globally accessible immediately
+if (typeof window !== 'undefined') {
+  window.testSupabaseConnection = testSupabaseConnection;
+  console.log('✅ Supabase test function loaded! Type: testSupabaseConnection()');
+}
 
 // Initialize Supabase table (run this once to create the table)
 async function initializeSupabaseTable() {
