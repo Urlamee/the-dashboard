@@ -18,8 +18,8 @@
 CREATE TABLE IF NOT EXISTS todos (
   id TEXT PRIMARY KEY,
   text TEXT NOT NULL,
-  assignee TEXT,
-  supplier TEXT,
+  who TEXT,
+  what TEXT,
   priority TEXT DEFAULT 'low',
   completed BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -54,4 +54,12 @@ CREATE POLICY "Allow anonymous access" ON todos
 **To verify table exists:**
 - Go to Supabase → Table Editor
 - You should see a `todos` table listed
+
+## 🔄 Migration: If You Already Have the Old Table
+
+If your table already has `assignee` and `supplier` columns, run this migration:
+
+1. Open **SQL Editor** in Supabase
+2. Paste and run `MIGRATION_rename_columns.sql` from the project root
+3. After verifying data copied correctly, uncomment the DROP statements to remove old columns
 

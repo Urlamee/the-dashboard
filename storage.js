@@ -42,11 +42,12 @@ async function loadTodosFromSupabase() {
       const data = await response.json();
       console.log(`✅ Loaded ${data.length} todos from Supabase`);
       // Convert Supabase format to app format
+      // Support both old (assignee/supplier) and new (who/what) column names for migration
       return data.map(item => ({
         id: item.id,
         text: item.text,
-        assignee: item.assignee,
-        supplier: item.supplier,
+        who: item.who || item.assignee || null, // Support migration from old column names
+        what: item.what || item.supplier || null, // Support migration from old column names
         priority: item.priority,
         completed: item.completed,
         createdAt: item.created_at
@@ -154,8 +155,8 @@ async function saveTodosToSupabase(todos) {
       const todosToUpsert = todos.map(todo => ({
         id: todo.id,
         text: todo.text,
-        assignee: todo.assignee || null,
-        supplier: todo.supplier || null,
+        who: todo.who || null,
+        what: todo.what || null,
         priority: todo.priority || 'low',
         completed: todo.completed || false,
         created_at: todo.createdAt || new Date().toISOString()
@@ -195,8 +196,8 @@ async function saveTodosToSupabase(todos) {
               },
               body: JSON.stringify({
                 text: todo.text,
-                assignee: todo.assignee,
-                supplier: todo.supplier,
+                who: todo.who,
+                what: todo.what,
                 priority: todo.priority,
                 completed: todo.completed,
                 created_at: todo.created_at
@@ -326,8 +327,8 @@ async function testSupabaseConnection() {
 CREATE TABLE IF NOT EXISTS todos (
   id TEXT PRIMARY KEY,
   text TEXT NOT NULL,
-  assignee TEXT,
-  supplier TEXT,
+  who TEXT,
+  what TEXT,
   priority TEXT DEFAULT 'low',
   completed BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -357,8 +358,8 @@ CREATE POLICY "Allow anonymous access" ON todos
     const testTodo = {
       id: 'test_' + Date.now(),
       text: 'Test todo from connection test',
-      assignee: null,
-      supplier: null,
+      who: null, // Database column name
+      what: null, // Database column name
       priority: 'low',
       completed: false,
       created_at: new Date().toISOString()

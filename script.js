@@ -104,10 +104,10 @@ async function addTodo(e) {
     return;
   }
   
-  // Parse @assignee, #supplier, and $priority tags from the input text
-  const { cleanText: afterAssigneeText, assignee } = parseAssigneeFromText(text);
-  const { cleanText: afterSupplierText, supplier } = parseSupplierFromText(afterAssigneeText);
-  const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterSupplierText);
+  // Parse @who, #what, and !priority tags from the input text
+  const { cleanText: afterWhoText, who } = parseAssigneeFromText(text);
+  const { cleanText: afterWhatText, what } = parseSupplierFromText(afterWhoText);
+  const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterWhatText);
   
   // Use parsed priority if available, otherwise use select value or default to 'low'
   const priority = parsedPriority || prioritySelect.value || 'low';
@@ -115,8 +115,8 @@ async function addTodo(e) {
   const newTodo = {
     id: generateId(),
     text: cleanText,
-    assignee: assignee || null,
-    supplier: supplier || null,
+    who: who || null,
+    what: what || null,
     priority: priority,
     completed: false,
     createdAt: new Date().toISOString()
@@ -135,9 +135,9 @@ function renderTodos() {
   // Clear current list
   todoList.innerHTML = '';
   
-  // Split into unassigned and assigned (has assignee)
-  const unassigned = todos.filter(t => !t.assignee);
-  const assigned = todos.filter(t => t.assignee);
+  // Split into unassigned and assigned (has who)
+  const unassigned = todos.filter(t => !t.who);
+  const assigned = todos.filter(t => t.who);
 
   // Render unassigned first
   unassigned.forEach(todo => {
@@ -174,8 +174,8 @@ function createTodoElement(todo) {
         ${todo.completed ? 'checked' : ''}
       >
       <span class="todo-text">${escapeHtml(todo.text)}</span>
-      ${todo.assignee ? `<span class="todo-assignee" title="Assignee">@${escapeHtml(todo.assignee)}</span>` : ''}
-      ${todo.supplier ? `<span class="todo-supplier" title="Supplier">#${escapeHtml(todo.supplier)}</span>` : ''}
+      ${todo.who ? `<span class="todo-assignee" title="Who">@${escapeHtml(todo.who)}</span>` : ''}
+      ${todo.what ? `<span class="todo-supplier" title="What">#${escapeHtml(todo.what)}</span>` : ''}
       <span class="todo-priority priority-${todo.priority}" data-priority="${todo.priority}" title="${getPriorityText(todo.priority)} (click to change)"></span>
     </div>
     <div class="todo-actions">
@@ -220,28 +220,21 @@ async function handleTodoClick(e) {
 
 // Edit todo
 async function editTodo(todo) {
-  // Get priority number for display
-  const priorityNumMap = {
-    'high': '1',
-    'medium': '2',
-    'low': '3'
-  };
-  const priorityNum = priorityNumMap[todo.priority] || '3';
-  
+  // Build text with tags for editing
   const currentText = todo.text + 
-    (todo.assignee ? ` @${todo.assignee}` : '') + 
-    (todo.supplier ? ` #${todo.supplier}` : '') + 
-    ` $${priorityNum}`;
+    (todo.who ? ` @${todo.who}` : '') + 
+    (todo.what ? ` #${todo.what}` : '') + 
+    (todo.priority === 'high' ? ' !' : '');
   
   const newText = prompt('Edit todo:', currentText);
   if (newText !== null && newText.trim()) {
-    const { cleanText: afterAssigneeText, assignee } = parseAssigneeFromText(newText.trim());
-    const { cleanText: afterSupplierText, supplier } = parseSupplierFromText(afterAssigneeText);
-    const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterSupplierText);
+    const { cleanText: afterWhoText, who } = parseAssigneeFromText(newText.trim());
+    const { cleanText: afterWhatText, what } = parseSupplierFromText(afterWhoText);
+    const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterWhatText);
     
     todo.text = cleanText;
-    todo.assignee = assignee || null;
-    todo.supplier = supplier || null;
+    todo.who = who || null;
+    todo.what = what || null;
     todo.priority = parsedPriority || todo.priority; // Keep existing priority if not specified
     await saveTodos();
     renderTodos();
@@ -500,50 +493,50 @@ function getPriorityText(priority) {
   return priorityMap[priority] || 'Low Priority';
 }
 
-// Parse @assignee from text. Returns { cleanText, assignee }
+// Parse @who from text. Returns { cleanText, who }
+// @ is for "who" (the person)
 function parseAssigneeFromText(input) {
   // Match first @word (letters, numbers, underscores, hyphens). Ignore email-like @ in the middle of words
   const regex = /(?:^|\s)@([A-Za-z0-9_\-]+)/;
   const match = input.match(regex);
   if (!match) {
-    return { cleanText: input, assignee: null };
+    return { cleanText: input, who: null };
   }
 
-  const assignee = match[1];
+  const who = match[1];
   // Remove the matched tag (preserve surrounding spaces) and trim
   const cleanText = input.replace(regex, (m) => m.replace(/@([A-Za-z0-9_\-]+)/, '').trim()).replace(/\s{2,}/g, ' ').trim();
-  return { cleanText, assignee };
+  return { cleanText, who };
 }
 
-// Parse #supplier from text. Returns { cleanText, supplier }
+// Parse #what from text. Returns { cleanText, what }
+// # is for "what" (the thing/topic)
 function parseSupplierFromText(input) {
   const regex = /(?:^|\s)#([A-Za-z0-9_\-]+)/;
   const match = input.match(regex);
   if (!match) {
-    return { cleanText: input, supplier: null };
+    return { cleanText: input, what: null };
   }
 
-  const supplier = match[1];
+  const what = match[1];
   const cleanText = input.replace(regex, (m) => m.replace(/#([A-Za-z0-9_\-]+)/, '').trim()).replace(/\s{2,}/g, ' ').trim();
-  return { cleanText, supplier };
+  return { cleanText, what };
 }
 
-// Parse $priority from text. Returns { cleanText, priority }
-// $1 = high, $2 = medium, $3 = low
+// Parse !priority from text. Returns { cleanText, priority }
+// ! = high priority
 function parsePriorityFromText(input) {
-  const regex = /\s*\$([123])\s*/;
+  // Match ! mark (as word boundary or standalone)
+  const regex = /(?:^|\s)!\s*/;
   const match = input.match(regex);
+  
   if (!match) {
     return { cleanText: input, priority: null };
   }
 
-  const priorityNum = match[1];
-  const priorityMap = {
-    '1': 'high',
-    '2': 'medium',
-    '3': 'low'
-  };
-  const priority = priorityMap[priorityNum];
+  // ! means high priority
+  const priority = 'high';
+  // Remove the ! mark and clean up spaces
   const cleanText = input.replace(regex, ' ').replace(/\s{2,}/g, ' ').trim();
   return { cleanText, priority };
 }
