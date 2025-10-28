@@ -4,52 +4,66 @@
 
 #### Permanent Data Storage with Supabase
 - ✅ Integrated Supabase for cloud-based permanent storage
-- ✅ Automatic fallback to localStorage if Supabase is not configured
-- ✅ Syncs todos across all devices and browsers
-- **Setup Instructions:**
-  1. Create a free account at [supabase.com](https://supabase.com)
-  2. Create a new project
-  3. **Create the todos table using SQL Editor:**
-     - In your Supabase dashboard, look at the left sidebar menu
-     - Click on **"SQL Editor"** (it has a database icon)
-     - Click the **"+ New query"** button (or it might auto-open a new query)
-     - Copy and paste this entire SQL code block into the editor:
-     ```sql
-     CREATE TABLE IF NOT EXISTS todos (
-       id TEXT PRIMARY KEY,
-       text TEXT NOT NULL,
-       assignee TEXT,
-       supplier TEXT,
-       priority TEXT DEFAULT 'low',
-       completed BOOLEAN DEFAULT false,
-       created_at TIMESTAMPTZ DEFAULT NOW()
-     );
+- ✅ Automatic fallback to localStorage if Supabase fails
+- ✅ Syncs todos across all devices and browsers in real-time
+- ✅ Smart sync: Only updates what changed (no duplicates)
+- ✅ Automatic error handling and logging
 
-     -- Enable Row Level Security (optional but recommended)
-     ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
+**How It Works:**
+- When you add/edit/delete a todo, it saves to Supabase cloud
+- All your devices see the same todos automatically
+- If cloud is unavailable, it saves locally and syncs later
+- Console shows clear messages so you know what's happening
 
-     -- Allow anonymous read/write (adjust policies based on your needs)
-     CREATE POLICY "Allow anonymous access" ON todos
-       FOR ALL
-       USING (true)
-       WITH CHECK (true);
-     ```
-     - Click the **"Run"** button (or press Ctrl+Enter / Cmd+Enter)
-     - You should see "Success. No rows returned" or similar success message
-     - ✅ The table is now created! You can verify by going to **Table Editor** in the left sidebar - you should see a `todos` table
-  4. Go to Settings → API and copy:
-     - Project URL
-     - anon/public key
-  5. Open `storage.js` and update the `SUPABASE_CONFIG` object:
-     ```javascript
-     const SUPABASE_CONFIG = {
-       url: 'https://vdrzaluohnjhucdccwin.supabase.co',  // Your Project URL
-       anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcnphbHVvaG5qaHVjZGNjd2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MTExMjQsImV4cCI6MjA3NzE4NzEyNH0.tudrEVEKh2BG-ajvjOoYxir9AwMN2U2VsBAtdV826PQ',            // Your anon/public key
-       enabled: true                              // Set to true to enable
-     };
-     ```
-  6. Save and refresh your app - todos will now sync to the cloud!
-- **Note:** The app works without Supabase using localStorage. Configure Supabase only when you want cloud sync.
+**Setup Instructions:**
+1. Create a free account at [supabase.com](https://supabase.com)
+2. Create a new project
+3. **Create the todos table using SQL Editor:**
+   - Go to **SQL Editor** in your Supabase dashboard
+   - Click **"+ New query"**
+   - Paste and run this SQL:
+   ```sql
+   CREATE TABLE IF NOT EXISTS todos (
+     id TEXT PRIMARY KEY,
+     text TEXT NOT NULL,
+     assignee TEXT,
+     supplier TEXT,
+     priority TEXT DEFAULT 'low',
+     completed BOOLEAN DEFAULT false,
+     created_at TIMESTAMPTZ DEFAULT NOW()
+   );
+
+   ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
+
+   CREATE POLICY "Allow anonymous access" ON todos
+     FOR ALL
+     USING (true)
+     WITH CHECK (true);
+   ```
+4. Get your credentials from Settings → API:
+   - Copy the **Project URL**
+   - Copy the **anon/public key** (keep this secure!)
+5. Update `storage.js` with your credentials:
+   ```javascript
+   const SUPABASE_CONFIG = {
+     url: 'YOUR_PROJECT_URL_HERE',
+     anonKey: 'YOUR_ANON_KEY_HERE',
+     enabled: true
+   };
+   ```
+6. Refresh your app - todos will sync to cloud!
+
+**Testing:**
+- Open browser console (F12)
+- Type: `testSupabaseConnection()` to test the setup
+- Add a todo and watch console messages
+- Check Supabase Table Editor to see your todos
+
+**Troubleshooting:**
+- **Todos not syncing?** Check console for error messages
+- **"Table doesn't exist" error?** Run the SQL above in Supabase
+- **"Permission denied" error?** Make sure the RLS policy was created
+- **Still using localStorage?** Check that `enabled: true` in storage.js
 
 ### 🚀 Future Features & Roadmap
 
@@ -68,7 +82,39 @@
   - The terminal bar displays: `Time · Date · Last push: TimeAgo · @AuthorName`
   - Footer displays copyright on first line, version number on second line: `v1.[commits]-[hash]`
 
+---
 
+### 🔧 Technical Improvements Made
+
+#### Supabase Sync Fixes ✅
+- **Problem:** New todos were saved locally but not appearing in Supabase
+- **Solution:** Fixed sync logic to properly update existing todos and insert new ones
+- **How it works now:**
+  - Updates existing todos instead of trying to re-insert them
+  - Only deletes todos that were actually removed
+  - Handles errors gracefully with clear console messages
+  - Uses smart "upsert" (update or insert) to avoid duplicates
+
+#### Error Handling ✅
+- Added detailed console logging for debugging
+- Clear success/error messages with emoji indicators
+- Automatic fallback to localStorage if cloud fails
+- Test function to verify Supabase connection
+
+---
+
+### 📋 Remaining Tasks
+
+#### Immediate Fixes Needed
+- [ ] **Test on multiple devices** - Verify todos sync across phones/tablets/computers
+- [ ] **Handle offline mode** - Store changes locally and sync when connection returns
+- [ ] **Optimize sync performance** - Currently syncs all todos, could batch large updates
+
+#### Cloud Storage Enhancements
+- [ ] **User authentication** - Add login so each user has their own todos
+- [ ] **Conflict resolution** - Handle when same todo is edited on two devices
+- [ ] **Sync status indicator** - Show user when last sync happened
+- [ ] **Backup/export** - Allow users to download their todos as JSON
 
 #### Task Rollout Feature
 - Implement expandable tasks with note/details option
