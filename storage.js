@@ -176,6 +176,133 @@ async function saveTodosToStorage(todos) {
   }
 }
 
+// Test Supabase connection (run this in browser console: testSupabaseConnection())
+async function testSupabaseConnection() {
+  console.log('🧪 Testing Supabase connection...');
+  console.log('Config:', { 
+    enabled: SUPABASE_CONFIG.enabled, 
+    url: SUPABASE_CONFIG.url,
+    hasKey: !!SUPABASE_CONFIG.anonKey 
+  });
+  
+  if (!isSupabaseConfigured()) {
+    console.error('❌ Supabase is not configured properly');
+    return false;
+  }
+
+  try {
+    // Test 1: Try to read from the table
+    console.log('\n📖 Test 1: Reading from todos table...');
+    const readResponse = await fetch(
+      `${SUPABASE_CONFIG.url}/rest/v1/todos?limit=1`,
+      {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    console.log('Response status:', readResponse.status);
+    
+    if (readResponse.status === 404 || readResponse.status === 406) {
+      const errorText = await readResponse.text();
+      console.error('❌ Table does not exist or wrong schema!');
+      console.error('Error:', errorText);
+      console.log('\n💡 SOLUTION: Run this SQL in your Supabase dashboard:');
+      console.log(`
+CREATE TABLE IF NOT EXISTS todos (
+  id TEXT PRIMARY KEY,
+  text TEXT NOT NULL,
+  assignee TEXT,
+  supplier TEXT,
+  priority TEXT DEFAULT 'low',
+  completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow anonymous access" ON todos
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+      `);
+      return false;
+    }
+    
+    if (!readResponse.ok) {
+      const errorText = await readResponse.text();
+      console.error('❌ Read failed:', errorText);
+      return false;
+    }
+    
+    const readData = await readResponse.json();
+    console.log('✅ Read successful! Found', readData.length, 'todos');
+    
+    // Test 2: Try to write a test todo
+    console.log('\n📝 Test 2: Writing test todo...');
+    const testTodo = {
+      id: 'test_' + Date.now(),
+      text: 'Test todo from connection test',
+      assignee: null,
+      supplier: null,
+      priority: 'low',
+      completed: false,
+      created_at: new Date().toISOString()
+    };
+    
+    const writeResponse = await fetch(
+      `${SUPABASE_CONFIG.url}/rest/v1/todos`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify([testTodo])
+      }
+    );
+    
+    console.log('Response status:', writeResponse.status);
+    
+    if (!writeResponse.ok) {
+      const errorText = await writeResponse.text();
+      console.error('❌ Write failed:', errorText);
+      console.error('Response:', await writeResponse.text());
+      return false;
+    }
+    
+    const writeData = await writeResponse.json();
+    console.log('✅ Write successful! Created:', writeData);
+    
+    // Clean up test todo
+    await fetch(
+      `${SUPABASE_CONFIG.url}/rest/v1/todos?id=eq.${testTodo.id}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      }
+    );
+    
+    console.log('\n✅✅✅ All tests passed! Supabase is working correctly.');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Connection test failed:', error);
+    return false;
+  }
+}
+
+// Make test function globally accessible
+window.testSupabaseConnection = testSupabaseConnection;
+
 // Initialize Supabase table (run this once to create the table)
 async function initializeSupabaseTable() {
   if (!isSupabaseConfigured()) {
