@@ -47,12 +47,11 @@ async function loadTodosFromSupabase() {
       const data = await response.json();
       console.log(`✅ Loaded ${data.length} todos from Supabase`);
       // Convert Supabase format to app format
-      // Support both old (assignee/supplier) and new (who/what) column names for migration
       return data.map(item => ({
         id: item.id,
         text: item.text,
-        who: item.who || item.assignee || null, // Support migration from old column names
-        what: item.what || item.supplier || null, // Support migration from old column names
+        who: item.who || null,
+        what: item.what || null,
         priority: item.priority,
         completed: item.completed,
         createdAt: item.created_at
@@ -175,69 +174,15 @@ async function saveTodosToSupabase(todos) {
 
     // Upsert (insert or update) all todos using PATCH with ON CONFLICT
     if (todos.length > 0) {
-      // Check schema by trying a simple query first to detect column names
-      let useOldColumns = false;
-      try {
-        // Try to query with new column names first
-        const schemaCheckResponse = await fetch(
-          `${SUPABASE_CONFIG.url}/rest/v1/todos?limit=1&select=who,what`,
-          {
-            headers: {
-              'apikey': SUPABASE_CONFIG.anonKey,
-              'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-        
-        if (!schemaCheckResponse.ok) {
-          const schemaError = await schemaCheckResponse.text();
-          // Check if error is about missing columns
-          if (schemaError.includes('column "who"') || 
-              schemaError.includes('column "what"') || 
-              schemaError.includes('Could not find')) {
-            // Try querying with old column names to confirm
-            const oldSchemaCheck = await fetch(
-              `${SUPABASE_CONFIG.url}/rest/v1/todos?limit=1&select=assignee,supplier`,
-              {
-                headers: {
-                  'apikey': SUPABASE_CONFIG.anonKey,
-                  'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-                  'Content-Type': 'application/json'
-                }
-              }
-            );
-            
-            if (oldSchemaCheck.ok) {
-              useOldColumns = true;
-              console.log('📋 Detected old schema (assignee/supplier). Will use old column names.');
-            }
-          }
-        }
-      } catch (e) {
-        console.warn('Could not auto-detect schema, will try new column names first');
-      }
-      
-      const todosToUpsert = todos.map(todo => {
-        const basePayload = {
-          id: todo.id,
-          text: todo.text,
-          priority: todo.priority || 'low',
-          completed: todo.completed || false,
-          created_at: todo.createdAt || new Date().toISOString()
-        };
-        
-        // Use appropriate column names
-        if (useOldColumns) {
-          basePayload.assignee = todo.who || null;
-          basePayload.supplier = todo.what || null;
-        } else {
-          basePayload.who = todo.who || null;
-          basePayload.what = todo.what || null;
-        }
-        
-        return basePayload;
-      });
+      const todosToUpsert = todos.map(todo => ({
+        id: todo.id,
+        text: todo.text,
+        who: todo.who || null,
+        what: todo.what || null,
+        priority: todo.priority || 'low',
+        completed: todo.completed || false,
+        created_at: todo.createdAt || new Date().toISOString()
+      }));
 
       // Use UPSERT strategy: POST with resolution=merge-duplicates header
       const upsertUrl = `${SUPABASE_CONFIG.url}/rest/v1/todos`;
@@ -265,38 +210,11 @@ async function saveTodosToSupabase(todos) {
         const errorText = await upsertResponse.text().catch(() => 'Unable to read error response');
         console.error('⚠️ Batch upsert failed:', errorText);
         console.error('Response status:', upsertResponse.status);
-        
-        // Check if error is due to column name mismatch (old schema)
-        const useOldColumns = errorText.includes('column "who"') || 
-                              errorText.includes('column "what"') ||
-                              errorText.includes('Could not find the column');
-        
-        if (useOldColumns) {
-          console.warn('⚠️ Detected old column schema (assignee/supplier). Using old column names...');
-        }
-        
         console.log('⚠️ Trying individual updates...');
         
         let successCount = 0;
         let failCount = 0;
         for (const todo of todosToUpsert) {
-          // Prepare payload with appropriate column names
-          const updatePayload = {
-            text: todo.text,
-            priority: todo.priority,
-            completed: todo.completed,
-            created_at: todo.created_at
-          };
-          
-          // Use old or new column names based on error detection
-          if (useOldColumns) {
-            updatePayload.assignee = todo.who || null;
-            updatePayload.supplier = todo.what || null;
-          } else {
-            updatePayload.who = todo.who || null;
-            updatePayload.what = todo.what || null;
-          }
-          
           // Try to update first
           const updateResponse = await fetch(
             `${SUPABASE_CONFIG.url}/rest/v1/todos?id=eq.${todo.id}`,
@@ -308,7 +226,14 @@ async function saveTodosToSupabase(todos) {
                 'Content-Type': 'application/json',
                 'Prefer': 'return=representation'
               },
-              body: JSON.stringify(updatePayload)
+              body: JSON.stringify({
+                text: todo.text,
+                who: todo.who,
+                what: todo.what,
+                priority: todo.priority,
+                completed: todo.completed,
+                created_at: todo.created_at
+              })
             }
           );
 
@@ -317,24 +242,6 @@ async function saveTodosToSupabase(todos) {
           } else {
             // If update fails, try insert (maybe it's a new todo)
             const updateError = await updateResponse.text().catch(() => 'Unknown error');
-            
-            // Prepare insert payload with appropriate column names
-            const insertPayload = {
-              id: todo.id,
-              text: todo.text,
-              priority: todo.priority,
-              completed: todo.completed,
-              created_at: todo.created_at
-            };
-            
-            // Use old or new column names based on error detection
-            if (useOldColumns) {
-              insertPayload.assignee = todo.who || null;
-              insertPayload.supplier = todo.what || null;
-            } else {
-              insertPayload.who = todo.who || null;
-              insertPayload.what = todo.what || null;
-            }
             
             const insertResponse = await fetch(
               `${SUPABASE_CONFIG.url}/rest/v1/todos`,
@@ -346,7 +253,7 @@ async function saveTodosToSupabase(todos) {
                   'Content-Type': 'application/json',
                   'Prefer': 'return=representation'
                 },
-                body: JSON.stringify([insertPayload])
+                body: JSON.stringify([todo])
               }
             );
 
@@ -358,41 +265,6 @@ async function saveTodosToSupabase(todos) {
               console.error(`❌ Failed to update/insert todo ${todo.id}:`);
               console.error(`   Update error: ${updateError}`);
               console.error(`   Insert error: ${insertError}`);
-              
-              // If we haven't detected old columns yet, check the error
-              if (!useOldColumns && (insertError.includes('column "who"') || insertError.includes('column "what"') || insertError.includes('Could not find'))) {
-                useOldColumns = true;
-                console.warn('⚠️ Detected old schema from error. Retrying with old column names...');
-                // Retry once with old columns
-                const retryPayload = {
-                  id: todo.id,
-                  text: todo.text,
-                  assignee: todo.who || null,
-                  supplier: todo.what || null,
-                  priority: todo.priority,
-                  completed: todo.completed,
-                  created_at: todo.created_at
-                };
-                
-                const retryResponse = await fetch(
-                  `${SUPABASE_CONFIG.url}/rest/v1/todos`,
-                  {
-                    method: 'POST',
-                    headers: {
-                      'apikey': SUPABASE_CONFIG.anonKey,
-                      'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
-                      'Content-Type': 'application/json',
-                      'Prefer': 'return=representation'
-                    },
-                    body: JSON.stringify([retryPayload])
-                  }
-                );
-                
-                if (retryResponse.ok) {
-                  successCount++;
-                  failCount--; // Adjust counts since retry succeeded
-                }
-              }
             }
           }
         }
