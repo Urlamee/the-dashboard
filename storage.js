@@ -26,8 +26,11 @@ async function loadTodosFromSupabase() {
 
   try {
     console.log('🔄 Loading todos from Supabase...');
+    const loadUrl = `${SUPABASE_CONFIG.url}/rest/v1/todos?order=created_at.desc&limit=1000`;
+    console.log('🔄 Making fetch request to:', loadUrl);
+    
     const response = await fetch(
-      `${SUPABASE_CONFIG.url}/rest/v1/todos?order=created_at.desc&limit=1000`,
+      loadUrl,
       {
         headers: {
           'apikey': SUPABASE_CONFIG.anonKey,
@@ -37,6 +40,8 @@ async function loadTodosFromSupabase() {
         }
       }
     );
+    
+    console.log('🔄 Load response status:', response.status, response.statusText);
 
     if (response.ok) {
       const data = await response.json();
@@ -56,10 +61,22 @@ async function loadTodosFromSupabase() {
       const errorText = await response.text();
       console.error('❌ Failed to load from Supabase:', errorText);
       console.error('Response status:', response.status);
+      console.error('Response headers:', Object.fromEntries(response.headers.entries()));
       return null;
     }
   } catch (error) {
     console.error('❌ Error loading from Supabase:', error);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      type: error.constructor.name
+    });
+    
+    // Check for specific error types
+    if (error.message?.includes('CORS') || error.message?.includes('Failed to fetch')) {
+      console.error('❌ CORS or Network Error detected.');
+    }
+    
     return null;
   }
 }
@@ -73,6 +90,12 @@ async function saveTodosToSupabase(todos) {
 
   try {
     console.log(`🔄 Syncing ${todos.length} todos to Supabase...`);
+    console.log('Supabase Config Check:', {
+      enabled: SUPABASE_CONFIG.enabled,
+      hasUrl: !!SUPABASE_CONFIG.url,
+      hasKey: !!SUPABASE_CONFIG.anonKey,
+      url: SUPABASE_CONFIG.url
+    });
     
     // If no todos, clear Supabase by deleting all (with proper WHERE clause)
     if (todos.length === 0) {
@@ -163,8 +186,12 @@ async function saveTodosToSupabase(todos) {
       }));
 
       // Use UPSERT strategy: POST with resolution=merge-duplicates header
+      const upsertUrl = `${SUPABASE_CONFIG.url}/rest/v1/todos`;
+      console.log('🔄 Making upsert request to:', upsertUrl);
+      console.log('🔄 Request payload:', JSON.stringify(todosToUpsert).substring(0, 200) + '...');
+      
       const upsertResponse = await fetch(
-        `${SUPABASE_CONFIG.url}/rest/v1/todos`,
+        upsertUrl,
         {
           method: 'POST',
           headers: {
@@ -176,12 +203,18 @@ async function saveTodosToSupabase(todos) {
           body: JSON.stringify(todosToUpsert)
         }
       );
+      
+      console.log('🔄 Upsert response status:', upsertResponse.status, upsertResponse.statusText);
 
       if (!upsertResponse.ok) {
         // If merge-duplicates doesn't work, try individual upserts
-        console.log('⚠️ Batch upsert failed, trying individual updates...');
+        const errorText = await upsertResponse.text().catch(() => 'Unable to read error response');
+        console.error('⚠️ Batch upsert failed:', errorText);
+        console.error('Response status:', upsertResponse.status);
+        console.log('⚠️ Trying individual updates...');
         
         let successCount = 0;
+        let failCount = 0;
         for (const todo of todosToUpsert) {
           // Try to update first
           const updateResponse = await fetch(
@@ -208,7 +241,9 @@ async function saveTodosToSupabase(todos) {
           if (updateResponse.ok) {
             successCount++;
           } else {
-            // If update fails, try insert
+            // If update fails, try insert (maybe it's a new todo)
+            const updateError = await updateResponse.text().catch(() => 'Unknown error');
+            
             const insertResponse = await fetch(
               `${SUPABASE_CONFIG.url}/rest/v1/todos`,
               {
@@ -225,6 +260,12 @@ async function saveTodosToSupabase(todos) {
 
             if (insertResponse.ok) {
               successCount++;
+            } else {
+              failCount++;
+              const insertError = await insertResponse.text().catch(() => 'Unknown error');
+              console.error(`❌ Failed to update/insert todo ${todo.id}:`);
+              console.error(`   Update error: ${updateError}`);
+              console.error(`   Insert error: ${insertError}`);
             }
           }
         }
@@ -233,7 +274,11 @@ async function saveTodosToSupabase(todos) {
           console.log(`✅ Successfully synced ${successCount} todos to Supabase (individual upserts)`);
           return true;
         } else {
-          console.error(`❌ Failed to sync some todos: ${successCount}/${todos.length} succeeded`);
+          console.error(`❌ Failed to sync some todos: ${successCount}/${todos.length} succeeded, ${failCount} failed`);
+          // Show user-friendly error
+          if (typeof window !== 'undefined') {
+            console.warn('⚠️ Some todos failed to sync. Check console for details.');
+          }
           return false;
         }
       } else {
@@ -247,6 +292,26 @@ async function saveTodosToSupabase(todos) {
     }
   } catch (error) {
     console.error('❌ Error saving to Supabase:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      type: error.constructor.name
+    });
+    
+    // Check for specific error types
+    if (error.message?.includes('CORS') || error.message?.includes('Failed to fetch')) {
+      console.error('❌ CORS or Network Error detected. This might be a CORS configuration issue.');
+      console.error('💡 Possible solutions:');
+      console.error('   1. Check Supabase project settings for CORS configuration');
+      console.error('   2. Verify the API URL and key are correct');
+      console.error('   3. Check browser network tab for CORS errors');
+    }
+    
+    // Show error to user if in browser
+    if (typeof window !== 'undefined' && error.message) {
+      console.warn('⚠️ Failed to sync to Supabase. Please check browser console for details.');
+    }
     return false;
   }
 }

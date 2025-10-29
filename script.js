@@ -85,7 +85,13 @@ async function loadTodos() {
 
 // Save todos (now uses storage.js which handles Supabase + localStorage)
 async function saveTodos() {
-  await saveTodosToStorage(todos);
+  try {
+    await saveTodosToStorage(todos);
+  } catch (error) {
+    console.error('❌ Error in saveTodos:', error);
+    // Error is already logged in storage.js, but we ensure it's visible
+    console.warn('⚠️ Failed to save todos. Data saved locally but may not have synced to cloud.');
+  }
 }
 
 // Generate unique ID

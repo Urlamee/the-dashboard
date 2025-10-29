@@ -1,19 +1,15 @@
--- Migration: Rename assignee and supplier columns to who and what
+-- Migration: Rename columns from assignee/supplier to who/what
 -- Run this in your Supabase SQL Editor
 
--- Step 1: Add new columns (who and what)
-ALTER TABLE todos ADD COLUMN IF NOT EXISTS who TEXT;
-ALTER TABLE todos ADD COLUMN IF NOT EXISTS what TEXT;
+-- Step 1: Rename the columns directly
+ALTER TABLE todos 
+  RENAME COLUMN assignee TO who;
 
--- Step 2: Copy data from old columns to new columns
-UPDATE todos SET who = assignee WHERE assignee IS NOT NULL;
-UPDATE todos SET what = supplier WHERE supplier IS NOT NULL;
+ALTER TABLE todos 
+  RENAME COLUMN supplier TO what;
 
--- Step 3: Drop old columns (after verifying data was copied correctly)
--- Uncomment these lines after you verify the migration worked:
--- ALTER TABLE todos DROP COLUMN assignee;
--- ALTER TABLE todos DROP COLUMN supplier;
+-- That's it! The columns are now renamed.
+-- Your existing data will be preserved automatically.
 
--- Optional: Clean up - remove these lines after migration is complete
--- DROP COLUMN assignee, DROP COLUMN supplier;
-
+-- Optional: Verify the changes worked:
+-- SELECT id, text, who, what, priority, completed FROM todos LIMIT 5;
