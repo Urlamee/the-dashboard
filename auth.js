@@ -1,25 +1,15 @@
-// Simple Codename Authentication
-// Stores codename in Supabase and verifies user input
-
 const AUTH_CONFIG = {
-  // Session storage key
   sessionKey: 'dashboard_auth_session',
-  
-  // Session timeout in milliseconds (30 days = 30 * 24 * 60 * 60 * 1000)
-  sessionTimeout: 30 * 24 * 60 * 60 * 1000, // 30 days
-  
-  // Supabase table for storing codename (will use existing Supabase config)
+  sessionTimeout: 30 * 24 * 60 * 60 * 1000,
   codeNameKey: 'auth_codename'
 };
 
-// Check if user is authenticated (has valid session)
 function isAuthenticated() {
   const session = localStorage.getItem(AUTH_CONFIG.sessionKey);
   if (!session) return false;
   
   try {
     const sessionData = JSON.parse(session);
-    // Check if session is still valid (expires after 30 days)
     const now = Date.now();
     if (now > sessionData.expiresAt) {
       localStorage.removeItem(AUTH_CONFIG.sessionKey);
@@ -31,7 +21,6 @@ function isAuthenticated() {
   }
 }
 
-// Create a session after successful authentication
 function createSession() {
   const sessionData = {
     authenticated: true,
@@ -41,7 +30,6 @@ function createSession() {
   localStorage.setItem(AUTH_CONFIG.sessionKey, JSON.stringify(sessionData));
 }
 
-// Get session expiration info
 function getSessionInfo() {
   const session = localStorage.getItem(AUTH_CONFIG.sessionKey);
   if (!session) return null;
@@ -58,14 +46,11 @@ function getSessionInfo() {
   }
 }
 
-// Clear session (logout)
 function clearSession() {
   localStorage.removeItem(AUTH_CONFIG.sessionKey);
 }
 
-// Handle logout with UI update
 function handleLogout() {
-  // Clear session
   clearSession();
   
   // Show login screen and hide dashboard
@@ -76,20 +61,14 @@ function handleLogout() {
   if (codenameInput) {
     codenameInput.value = '';
   }
-  
-  console.log('✅ Logged out successfully');
 }
 
-// Get codename from Supabase ONLY (no fallback)
 async function getStoredCodename() {
-  // Check if Supabase is configured
   if (typeof isSupabaseConfigured !== 'function' || !isSupabaseConfigured()) {
-    console.error('❌ Supabase is not configured. Authentication requires Supabase.');
     return null;
   }
   
   try {
-    // Get codename from Supabase
     const response = await fetch(
       `${SUPABASE_CONFIG.url}/rest/v1/app_settings?key=eq.${AUTH_CONFIG.codeNameKey}`,
       {
@@ -108,23 +87,18 @@ async function getStoredCodename() {
       }
     }
     
-    // Codename not found in database
-    console.warn('⚠️ Codename not found in Supabase. Please run SETUP_CODENAME.sql first.');
     return null;
   } catch (error) {
-    console.error('❌ Error getting codename from Supabase:', error);
     return null;
   }
 }
 
-// Save codename to Supabase
 async function saveCodenameToSupabase(codename) {
   if (typeof isSupabaseConfigured !== 'function' || !isSupabaseConfigured()) {
     return false;
   }
   
   try {
-    // Upsert the codename
     const response = await fetch(
       `${SUPABASE_CONFIG.url}/rest/v1/app_settings`,
       {
@@ -144,12 +118,10 @@ async function saveCodenameToSupabase(codename) {
     
     return response.ok;
   } catch (error) {
-    console.error('Error saving codename to Supabase:', error);
     return false;
   }
 }
 
-// Verify codename (only accepts codename from Supabase)
 async function verifyCodename(inputCodename) {
   const storedCodename = await getStoredCodename();
   
@@ -324,6 +296,5 @@ if (typeof window !== 'undefined') {
   window.getAuthTableSQL = getAuthTableSQL;
   window.clearAuthSession = clearSession;
   window.getSessionInfo = getSessionInfo;
-  console.log('✅ Auth functions loaded!');
 }
 

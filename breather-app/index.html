@@ -9,15 +9,15 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
         :root {
-            /* Default theme - Forest Breeze */
-            --bg-gradient-start: #e0f2f1;
-            --bg-gradient-end: #e8f5e9;
-            --primary-light: #38b2ac;
-            --primary-dark: #48bb78;
-            --text-color: rgb(22, 101, 52);
-            --quadrant-bg: rgba(56, 178, 172, 0.1);
-            --quadrant-hover: rgba(72, 187, 120, 0.15);
-            --quadrant-active: rgba(72, 187, 120, 0.2);
+            /* Default theme - Dashboard (matches main dashboard) */
+            --bg-gradient-start: #f8fafc;
+            --bg-gradient-end: #ffffff;
+            --primary-light: #22c55e;
+            --primary-dark: #16a34a;
+            --text-color: rgb(31, 41, 55);
+            --quadrant-bg: rgba(34, 197, 94, 0.1);
+            --quadrant-hover: rgba(22, 163, 74, 0.15);
+            --quadrant-active: rgba(22, 163, 74, 0.2);
         }
 
         /* Ocean Calm Theme */
@@ -70,15 +70,15 @@
         }
 
 /* Forest Breeze Theme */
-        [data-theme="forest"] {
-    --bg-gradient-start: #e8f5e9;
-    --bg-gradient-end: #c8e6c9;
-    --primary-light: #66bb6a;
-    --primary-dark: #2e7d32;
-    --text-color: rgb(27, 94, 32);
-    --quadrant-bg: rgba(102, 187, 106, 0.1);
-    --quadrant-hover: rgba(46, 125, 50, 0.15);
-    --quadrant-active: rgba(46, 125, 50, 0.2);
+[data-theme="forest"] {
+    --bg-gradient-start: #e0f2f1;
+    --bg-gradient-end: #e8f5e9;
+    --primary-light: #38b2ac;
+    --primary-dark: #48bb78;
+    --text-color: rgb(22, 101, 52);
+    --quadrant-bg: rgba(56, 178, 172, 0.1);
+    --quadrant-hover: rgba(72, 187, 120, 0.15);
+    --quadrant-active: rgba(72, 187, 120, 0.2);
 }
 
 
@@ -92,6 +92,18 @@
     --quadrant-bg: rgba(189, 189, 189, 0.1);
     --quadrant-hover: rgba(97, 97, 97, 0.15);
     --quadrant-active: rgba(97, 97, 97, 0.2);
+}
+
+/* Dashboard Theme - Matches the main dashboard style */
+[data-theme="dashboard"] {
+    --bg-gradient-start: #f8fafc;
+    --bg-gradient-end: #ffffff;
+    --primary-light: #22c55e;
+    --primary-dark: #16a34a;
+    --text-color: rgb(31, 41, 55);
+    --quadrant-bg: rgba(34, 197, 94, 0.1);
+    --quadrant-hover: rgba(22, 163, 74, 0.15);
+    --quadrant-active: rgba(22, 163, 74, 0.2);
 }
 
 
@@ -1295,7 +1307,7 @@
         // Theme switching functionality
         function getAvailableThemes() {
             const styleSheets = document.styleSheets;
-            const themes = new Set(['forest']); // Default theme is always included
+            const themes = new Set(['dashboard', 'forest']); // Dashboard is default, forest is included
             
             for (let sheet of styleSheets) {
                 try {
@@ -1307,7 +1319,6 @@
                         }
                     }
                 } catch (e) {
-                    console.log('Could not read stylesheet rules');
                 }
             }
             
@@ -1342,7 +1353,17 @@
 
         function updateThemeName(animate = true) {
             const currentTheme = themes[currentThemeIndex];
-            const displayName = currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1);
+            // Proper capitalization for theme names
+            const displayNames = {
+                'forest': 'Forest Breeze',
+                'dashboard': 'Dashboard',
+                'ocean': 'Ocean Calm',
+                'sunset': 'Sunset Serenity',
+                'lavender': 'Lavender Mist',
+                'citrine': 'Citrine Glow',
+                'sand': 'Sand'
+            };
+            const displayName = displayNames[currentTheme] || currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1);
             
             if (animate) {
                 themeNameTooltip.style.opacity = '1';
@@ -1359,7 +1380,8 @@
         function cycleTheme() {
             currentThemeIndex = (currentThemeIndex + 1) % themes.length;
             const newTheme = themes[currentThemeIndex];
-            document.documentElement.dataset.theme = newTheme === 'forest' ? '' : newTheme;
+            // Dashboard is default, so use empty string; others use their data-theme value
+            document.documentElement.dataset.theme = newTheme === 'dashboard' ? '' : newTheme;
             
             // Update and show theme name
             updateThemeName(true);
@@ -1370,9 +1392,16 @@
 
         // Load saved theme preference
         const savedTheme = localStorage.getItem('preferredTheme');
+        
         if (savedTheme && themes.includes(savedTheme)) {
             currentThemeIndex = themes.indexOf(savedTheme);
-            document.documentElement.dataset.theme = savedTheme === 'forest' ? '' : savedTheme;
+            // Dashboard is default (empty string), others use their data-theme value
+            document.documentElement.dataset.theme = savedTheme === 'dashboard' ? '' : savedTheme;
+            updateThemeName(false);
+        } else {
+            // No saved theme - use default dashboard theme
+            currentThemeIndex = themes.indexOf('dashboard');
+            document.documentElement.dataset.theme = ''; // Empty = default (dashboard)
             updateThemeName(false);
         }
 

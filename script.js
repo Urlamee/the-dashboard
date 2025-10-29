@@ -1,16 +1,12 @@
-// DOM Elements
 const todoForm = document.getElementById('todo-form');
 const todoInput = document.getElementById('todo-input');
 const prioritySelect = document.getElementById('priority-select');
 const todoList = document.getElementById('todo-list');
 
-// State
 let todos = [];
 
-// API URL for quotes
 const QUOTES_API_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTHESDUKRMcYfz1CeEJxfkKtR1oOVptvny3yq4CkuUPu488JtF1imxtKcffANnVyZExQOYuqdkfoiBF/pub?output=csv';
 
-// Fallback quotes in case API fails
 const fallbackQuotes = [
   '"The way to get started is to quit talking and begin doing." - Walt Disney',
   '"Success is not final, failure is not fatal: it is the courage to continue that counts." - Winston Churchill',
@@ -25,18 +21,14 @@ const fallbackQuotes = [
   '"Success is walking from failure to failure with no loss of enthusiasm." - Winston Churchill'
 ];
 
-// Store fetched quotes
 let dailyAdvice = [...fallbackQuotes];
 
-// Git repository information for terminal bar
-// Configure your repository information here
 const GIT_CONFIG = {
-  owner: 'Urlamee', // Replace with your GitHub username
-  repo: 'the-dashboard', // Replace with your repository name
-  branch: 'main' // Replace with your default branch
+  owner: 'Urlamee',
+  repo: 'the-dashboard',
+  branch: 'main'
 };
 
-// Git info state
 let gitInfo = {
   commitHash: '…',
   fullHash: '…',
@@ -47,7 +39,6 @@ let gitInfo = {
   branch: GIT_CONFIG.branch
 };
 
-// Initialize app
 async function init() {
   await loadTodos();
   fetchQuotesFromAPI();
@@ -55,7 +46,6 @@ async function init() {
   startTerminalClock();
   initHabitsTracker();
   
-  // Event listeners
   todoForm.addEventListener('submit', addTodo);
   todoList.addEventListener('click', handleTodoClick);
 }
@@ -71,13 +61,9 @@ async function saveTodos() {
   try {
     await saveTodosToStorage(todos);
   } catch (error) {
-    console.error('❌ Error in saveTodos:', error);
-    // Error is already logged in storage.js, but we ensure it's visible
-    console.warn('⚠️ Failed to save todos. Data saved locally but may not have synced to cloud.');
   }
 }
 
-// Generate unique ID
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
@@ -93,12 +79,10 @@ async function addTodo(e) {
     return;
   }
   
-  // Parse @who, #what, and !priority tags from the input text
   const { cleanText: afterWhoText, who } = parseAssigneeFromText(text);
   const { cleanText: afterWhatText, what } = parseSupplierFromText(afterWhoText);
   const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterWhatText);
   
-  // Use parsed priority if available, otherwise use select value or default to 'low'
   const priority = parsedPriority || prioritySelect.value || 'low';
   
   const newTodo = {
@@ -119,22 +103,17 @@ async function addTodo(e) {
   prioritySelect.value = 'low';
 }
 
-// Render todos
 function renderTodos() {
-  // Clear current list
   todoList.innerHTML = '';
   
-  // Split into unassigned and assigned (has who)
   const unassigned = todos.filter(t => !t.who);
   const assigned = todos.filter(t => t.who);
 
-  // Render unassigned first
   unassigned.forEach(todo => {
     const li = createTodoElement(todo);
     todoList.appendChild(li);
   });
 
-  // Add divider if there are assigned tasks
   if (assigned.length > 0) {
     const divider = document.createElement('li');
     divider.className = 'todo-divider';
@@ -142,7 +121,6 @@ function renderTodos() {
     todoList.appendChild(divider);
   }
 
-  // Render assigned tasks
   assigned.forEach(todo => {
     const li = createTodoElement(todo);
     todoList.appendChild(li);
@@ -186,7 +164,6 @@ function createTodoElement(todo) {
   return li;
 }
 
-// Handle todo item clicks
 async function handleTodoClick(e) {
   const todoItem = e.target.closest('.todo-item');
   if (!todoItem) return;
@@ -195,27 +172,19 @@ async function handleTodoClick(e) {
   const todo = todos.find(t => t.id === todoId);
   
   if (e.target.classList.contains('todo-checkbox')) {
-    // Toggle completion
     todo.completed = !todo.completed;
     await saveTodos();
     renderTodos();
   } else if (e.target.closest('.edit-btn')) {
-    // Edit todo
     await editTodo(todo);
   } else if (e.target.closest('.remove-btn')) {
-    // Remove todo
     await removeTodo(todoId);
   } else if (e.target.closest('.todo-priority')) {
-    // Change priority
     await changePriority(todo);
-  } else {
-    // Do nothing; only the checkbox toggles completion
   }
 }
 
-// Edit todo
 async function editTodo(todo) {
-  // Build text with tags for editing
   const currentText = todo.text + 
     (todo.who ? ` @${todo.who}` : '') + 
     (todo.what ? ` #${todo.what}` : '') + 
@@ -230,13 +199,12 @@ async function editTodo(todo) {
     todo.text = cleanText;
     todo.who = who || null;
     todo.what = what || null;
-    todo.priority = parsedPriority || todo.priority; // Keep existing priority if not specified
+    todo.priority = parsedPriority || todo.priority;
     await saveTodos();
     renderTodos();
   }
 }
 
-// Remove todo
 async function removeTodo(todoId) {
   if (confirm('Are you sure you want to delete this todo?')) {
     todos = todos.filter(todo => todo.id !== todoId);
@@ -245,7 +213,6 @@ async function removeTodo(todoId) {
   }
 }
 
-// Change priority
 async function changePriority(todo) {
   const priorities = ['low', 'medium', 'high'];
   const currentIndex = priorities.indexOf(todo.priority);
@@ -255,8 +222,6 @@ async function changePriority(todo) {
   renderTodos();
 }
 
-
-// Parse CSV line handling quoted fields with commas
 function parseCSVLine(line) {
   const result = [];
   let current = '';
@@ -279,27 +244,22 @@ function parseCSVLine(line) {
   return result;
 }
 
-// Fetch Git repository information from GitHub API
 async function fetchGitInfo() {
   try {
-    // Fetch the latest commit from the default branch
     const commitUrl = `https://api.github.com/repos/${GIT_CONFIG.owner}/${GIT_CONFIG.repo}/commits/${GIT_CONFIG.branch}`;
     const commitResponse = await fetch(commitUrl);
     
     if (commitResponse.ok) {
       const data = await commitResponse.json();
       
-      // Extract commit information
       gitInfo.fullHash = data.sha;
-      gitInfo.commitHash = data.sha.substring(0, 7); // Short hash (first 7 chars)
+      gitInfo.commitHash = data.sha.substring(0, 7);
       gitInfo.commitMessage = data.commit.message || 'No commit message';
       gitInfo.authorName = data.commit.author.name;
       
-      // Format timestamp
       const pushDate = new Date(data.commit.author.date);
       gitInfo.pushTimestamp = formatRelativeTime(pushDate);
       
-      // Fetch commit count
       const commitsUrl = `https://api.github.com/repos/${GIT_CONFIG.owner}/${GIT_CONFIG.repo}/commits?sha=${GIT_CONFIG.branch}&per_page=1`;
       const commitsResponse = await fetch(commitsUrl);
       
@@ -319,10 +279,8 @@ async function fetchGitInfo() {
         }
       }
       
-      console.log('Git info loaded successfully:', gitInfo);
       updateVersionDisplay();
     } else {
-      console.log('Failed to fetch git info from GitHub API');
       gitInfo.commitHash = 'local';
       gitInfo.fullHash = '';
       gitInfo.commitMessage = '';
@@ -330,10 +288,9 @@ async function fetchGitInfo() {
       gitInfo.pushTimestamp = 'unknown';
       gitInfo.authorName = 'dev';
       updateVersionDisplay();
-    }
-  } catch (error) {
-    console.log('Error fetching git info:', error);
-    gitInfo.commitHash = 'local';
+      }
+    } catch (error) {
+      gitInfo.commitHash = 'local';
     gitInfo.fullHash = '';
     gitInfo.commitMessage = '';
     gitInfo.commitCount = 0;
@@ -343,7 +300,6 @@ async function fetchGitInfo() {
   }
 }
 
-// Format relative time (e.g., "2 hours ago", "3 days ago")
 function formatRelativeTime(date) {
   const now = new Date();
   const diffMs = now - date;
@@ -357,7 +313,6 @@ function formatRelativeTime(date) {
   if (diffHour < 24) return `${diffHour}h ago`;
   if (diffDay < 7) return `${diffDay}d ago`;
   
-  // For older dates, show the actual date
   const month = date.toLocaleDateString(undefined, { month: 'short' });
   const day = date.getDate();
   return `${month} ${day}`;
@@ -382,30 +337,25 @@ function updateVersionDisplay() {
   }
 }
 
-// Fetch quotes from Google Sheets API
 async function fetchQuotesFromAPI() {
   try {
     const response = await fetch(QUOTES_API_URL);
     const csvText = await response.text();
     
-    // Parse CSV data
     const lines = csvText.split('\n');
     const quotes = [];
     
-    for (let i = 1; i < lines.length; i++) { // Skip header row
+    for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line) {
         const columns = parseCSVLine(line);
         
-        // Check if we have at least 2 columns (id_quote, quote)
         if (columns.length >= 2) {
           const id = columns[0];
           const quote = columns[1];
           
-          // Clean up the quote (remove extra quotes and whitespace)
           const cleanQuote = quote.replace(/^"(.*)"$/, '$1').trim();
           
-          // Filter out invalid quotes
           if (cleanQuote && 
               cleanQuote.length > 10 && 
               cleanQuote.length < 1000 && 
@@ -419,13 +369,10 @@ async function fetchQuotesFromAPI() {
     
     if (quotes.length > 0) {
       dailyAdvice = quotes;
-      console.log(`Loaded ${quotes.length} quotes from API`);
     } else {
-      console.log('No valid quotes found in API, using fallback quotes');
       dailyAdvice = [...fallbackQuotes];
     }
   } catch (error) {
-    console.log('Failed to fetch quotes from API, using fallback quotes:', error);
     dailyAdvice = [...fallbackQuotes];
   }
   
@@ -453,7 +400,6 @@ function startTerminalClock() {
   if (!el) return;
 
   const update = () => {
-    // Display git information (commit hash now in footer)
     const timestamp = gitInfo.pushTimestamp || '…';
     const author = gitInfo.authorName || '…';
     
@@ -464,14 +410,12 @@ function startTerminalClock() {
   setInterval(update, 1000);
 }
 
-// Utility function to escape HTML
 function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
 }
 
-// Get priority text from value
 function getPriorityText(priority) {
   const priorityMap = {
     'low': 'Low Priority',
@@ -481,10 +425,7 @@ function getPriorityText(priority) {
   return priorityMap[priority] || 'Low Priority';
 }
 
-// Parse @who from text. Returns { cleanText, who }
-// @ is for "who" (the person)
 function parseAssigneeFromText(input) {
-  // Match first @word (letters, numbers, underscores, hyphens). Ignore email-like @ in the middle of words
   const regex = /(?:^|\s)@([A-Za-z0-9_\-]+)/;
   const match = input.match(regex);
   if (!match) {
@@ -492,13 +433,10 @@ function parseAssigneeFromText(input) {
   }
 
   const who = match[1];
-  // Remove the matched tag (preserve surrounding spaces) and trim
   const cleanText = input.replace(regex, (m) => m.replace(/@([A-Za-z0-9_\-]+)/, '').trim()).replace(/\s{2,}/g, ' ').trim();
   return { cleanText, who };
 }
 
-// Parse #what from text. Returns { cleanText, what }
-// # is for "what" (the thing/topic)
 function parseSupplierFromText(input) {
   const regex = /(?:^|\s)#([A-Za-z0-9_\-]+)/;
   const match = input.match(regex);
@@ -511,10 +449,7 @@ function parseSupplierFromText(input) {
   return { cleanText, what };
 }
 
-// Parse !priority from text. Returns { cleanText, priority }
-// ! = high priority
 function parsePriorityFromText(input) {
-  // Match ! mark (as word boundary or standalone)
   const regex = /(?:^|\s)!\s*/;
   const match = input.match(regex);
   
@@ -522,36 +457,28 @@ function parsePriorityFromText(input) {
     return { cleanText: input, priority: null };
   }
 
-  // ! means high priority
   const priority = 'high';
-  // Remove the ! mark and clean up spaces
   const cleanText = input.replace(regex, ' ').replace(/\s{2,}/g, ' ').trim();
   return { cleanText, priority };
 }
 
-// Habits Tracker Functions with Database Logging
-// Get today's date string (YYYY-MM-DD)
 function getTodayDateString() {
   const today = new Date();
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 }
 
-// Load habits for today from database
 async function loadHabits() {
   const today = getTodayDateString();
   
-  // Load from database (Supabase + localStorage fallback)
   const habits = await loadHabitLogsForDate(today);
   
   return habits || {};
 }
 
-// Initialize habits tracker
 async function initHabitsTracker() {
   const habits = await loadHabits();
   const habitIcons = document.querySelectorAll('.habit-icon');
   
-  // Update UI to reflect current state
   habitIcons.forEach(icon => {
     const habitName = icon.dataset.habit;
     if (habits[habitName]) {
@@ -560,26 +487,20 @@ async function initHabitsTracker() {
       icon.classList.remove('completed');
     }
     
-    // Add click handler
     icon.addEventListener('click', () => toggleHabit(habitName));
   });
   
-  // Schedule midnight reset check
   scheduleMidnightReset();
 }
 
-// Toggle habit completion and log to database
 async function toggleHabit(habitName) {
   const today = getTodayDateString();
   const currentHabits = await loadHabits();
   
-  // Toggle the habit state
   const newState = !currentHabits[habitName];
   
-  // Save to database (logs the date, habit name, and true/false state)
   await saveHabitLogForDate(today, habitName, newState);
   
-  // Update UI
   const icon = document.querySelector(`.habit-icon[data-habit="${habitName}"]`);
   if (icon) {
     if (newState) {
@@ -588,25 +509,19 @@ async function toggleHabit(habitName) {
       icon.classList.remove('completed');
     }
   }
-  
-  console.log(`📊 Habit logged: ${habitName} on ${today} = ${newState}`);
 }
 
-// Schedule reset check at midnight (habits don't reset, but we check if date changed)
 function scheduleMidnightReset() {
   const now = new Date();
   const midnight = new Date();
-  midnight.setHours(24, 0, 0, 0); // Next midnight
+  midnight.setHours(24, 0, 0, 0);
   const msUntilMidnight = midnight - now;
   
-  // Check if date changed at midnight
   setTimeout(async () => {
     const today = getTodayDateString();
     
-    // Reload habits for the new day
     const habits = await loadHabits();
     
-    // Update UI for new day
     document.querySelectorAll('.habit-icon').forEach(icon => {
       const habitName = icon.dataset.habit;
       if (habits[habitName]) {
@@ -616,25 +531,19 @@ function scheduleMidnightReset() {
       }
     });
     
-    // Schedule next reset check
     scheduleMidnightReset();
   }, msUntilMidnight);
 }
 
-// Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', async () => {
-  // Check authentication first
   const isAuth = await initAuth();
   
   if (isAuth) {
-    // User is authenticated, initialize app
     await init();
-    // Initialize logout button
     if (typeof initLogoutButton === 'function') {
       initLogoutButton();
     }
   } else {
-    // User needs to login - set up login form handler
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
       loginForm.addEventListener('submit', handleLogin);
