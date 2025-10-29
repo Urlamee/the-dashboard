@@ -482,6 +482,212 @@ if (typeof window !== 'undefined') {
   console.log('✅ Supabase test function loaded! Type: testSupabaseConnection()');
 }
 
+// ============================================
+// Habits Log Storage Functions
+// ============================================
+
+// Save habit completion to Supabase
+async function saveHabitLogToSupabase(date, habitName, completed) {
+  if (!isSupabaseConfigured()) {
+    console.log('Supabase not configured, skipping habit log save');
+    return false;
+  }
+
+  try {
+    console.log(`🔄 Saving habit log: ${habitName} on ${date} = ${completed}`);
+    
+    // Try to update existing record first
+    const updateResponse = await fetch(
+      `${SUPABASE_CONFIG.url}/rest/v1/habits_log?date=eq.${date}&habit_name=eq.${habitName}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+          completed: completed,
+          updated_at: new Date().toISOString()
+        })
+      }
+    );
+
+    if (updateResponse.ok) {
+      const data = await updateResponse.json();
+      if (data.length > 0) {
+        console.log(`✅ Updated habit log for ${habitName} on ${date}`);
+        return true;
+      }
+    }
+
+    // If update didn't work, try inserting new record
+    const insertResponse = await fetch(
+      `${SUPABASE_CONFIG.url}/rest/v1/habits_log`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify([{
+          date: date,
+          habit_name: habitName,
+          completed: completed
+        }])
+      }
+    );
+
+    if (insertResponse.ok) {
+      console.log(`✅ Created new habit log for ${habitName} on ${date}`);
+      return true;
+    } else {
+      const errorText = await insertResponse.text();
+      console.error('❌ Failed to save habit log:', errorText);
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Error saving habit log to Supabase:', error);
+    return false;
+  }
+}
+
+// Load habit logs from Supabase for a date range
+async function loadHabitLogsFromSupabase(startDate, endDate) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  try {
+    console.log(`🔄 Loading habit logs from ${startDate} to ${endDate}`);
+    const loadUrl = `${SUPABASE_CONFIG.url}/rest/v1/habits_log?date=gte.${startDate}&date=lte.${endDate}&order=date.desc`;
+    
+    const response = await fetch(
+      loadUrl,
+      {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log(`✅ Loaded ${data.length} habit log entries from Supabase`);
+      
+      // Convert to more convenient format: { date: { habitName: completed } }
+      const logs = {};
+      data.forEach(entry => {
+        if (!logs[entry.date]) {
+          logs[entry.date] = {};
+        }
+        logs[entry.date][entry.habit_name] = entry.completed;
+      });
+      
+      return logs;
+    } else {
+      const errorText = await response.text();
+      console.error('❌ Failed to load habit logs from Supabase:', errorText);
+      return null;
+    }
+  } catch (error) {
+    console.error('❌ Error loading habit logs from Supabase:', error);
+    return null;
+  }
+}
+
+// Load today's habits from Supabase and localStorage
+async function loadHabitLogsForDate(date) {
+  // Try Supabase first if configured
+  if (isSupabaseConfigured()) {
+    const supabaseLogs = await loadHabitLogsFromSupabase(date, date);
+    if (supabaseLogs && supabaseLogs[date]) {
+      // Sync to localStorage as backup
+      const stored = localStorage.getItem('habits_log');
+      let localLogs = stored ? JSON.parse(stored) : {};
+      localLogs[date] = supabaseLogs[date];
+      localStorage.setItem('habits_log', JSON.stringify(localLogs));
+      return supabaseLogs[date];
+    }
+  }
+
+  // Fallback to localStorage
+  const stored = localStorage.getItem('habits_log');
+  if (stored) {
+    try {
+      const logs = JSON.parse(stored);
+      return logs[date] || {};
+    } catch (e) {
+      console.error('Error loading habit logs from localStorage:', e);
+    }
+  }
+
+  return {};
+}
+
+// Save habit log for a specific date
+async function saveHabitLogForDate(date, habitName, completed) {
+  // Always save to localStorage first
+  const stored = localStorage.getItem('habits_log');
+  let logs = stored ? JSON.parse(stored) : {};
+  
+  if (!logs[date]) {
+    logs[date] = {};
+  }
+  logs[date][habitName] = completed;
+  localStorage.setItem('habits_log', JSON.stringify(logs));
+
+  // Also save to Supabase if configured
+  if (isSupabaseConfigured()) {
+    await saveHabitLogToSupabase(date, habitName, completed);
+  }
+}
+
+// Get all habit logs (for stats/visualization)
+async function getAllHabitLogs(startDate = null, endDate = null) {
+  // Use today's date if not specified
+  if (!startDate) {
+    const today = new Date();
+    startDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  }
+  if (!endDate) {
+    endDate = startDate;
+  }
+
+  // Try Supabase first
+  if (isSupabaseConfigured()) {
+    const supabaseLogs = await loadHabitLogsFromSupabase(startDate, endDate);
+    if (supabaseLogs !== null) {
+      return supabaseLogs;
+    }
+  }
+
+  // Fallback to localStorage
+  const stored = localStorage.getItem('habits_log');
+  if (stored) {
+    try {
+      const logs = JSON.parse(stored);
+      // Filter by date range
+      const filtered = {};
+      Object.keys(logs).forEach(date => {
+        if (date >= startDate && date <= endDate) {
+          filtered[date] = logs[date];
+        }
+      });
+      return filtered;
+    } catch (e) {
+      console.error('Error loading habit logs from localStorage:', e);
+    }
+  }
+
+  return {};
+}
+
 // Initialize Supabase table (run this once to create the table)
 async function initializeSupabaseTable() {
   if (!isSupabaseConfigured()) {
@@ -514,5 +720,173 @@ async function initializeSupabaseTable() {
 
   console.log('To initialize Supabase table, run the SQL in the Supabase dashboard.');
   return true;
+}
+
+// Initialize Supabase habits_log table (run this SQL in Supabase dashboard)
+async function initializeHabitsLogTable() {
+  if (!isSupabaseConfigured()) {
+    console.warn('Supabase not configured. Cannot initialize table.');
+    return false;
+  }
+
+  // This requires running SQL in Supabase dashboard
+  // Run this SQL:
+  /*
+  CREATE TABLE IF NOT EXISTS habits_log (
+    id BIGSERIAL PRIMARY KEY,
+    date DATE NOT NULL,
+    habit_name TEXT NOT NULL,
+    completed BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(date, habit_name)
+  );
+
+  -- Create index for faster date queries
+  CREATE INDEX IF NOT EXISTS idx_habits_log_date ON habits_log(date);
+  CREATE INDEX IF NOT EXISTS idx_habits_log_habit_name ON habits_log(habit_name);
+
+  -- Enable Row Level Security
+  ALTER TABLE habits_log ENABLE ROW LEVEL SECURITY;
+
+  -- Allow anonymous read/write (adjust policies based on your needs)
+  CREATE POLICY "Allow anonymous access" ON habits_log
+    FOR ALL
+    USING (true)
+    WITH CHECK (true);
+  */
+
+  console.log('To initialize habits_log table, run the SQL in the Supabase dashboard.');
+  console.log('SQL Schema:');
+  console.log(`
+CREATE TABLE IF NOT EXISTS habits_log (
+  id BIGSERIAL PRIMARY KEY,
+  date DATE NOT NULL,
+  habit_name TEXT NOT NULL,
+  completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(date, habit_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_habits_log_date ON habits_log(date);
+CREATE INDEX IF NOT EXISTS idx_habits_log_habit_name ON habits_log(habit_name);
+
+ALTER TABLE habits_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow anonymous access" ON habits_log
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+  `);
+  return true;
+}
+
+// Test habits log connection (run in browser console: testHabitsLogConnection())
+async function testHabitsLogConnection() {
+  console.log('🧪 Testing habits_log table connection...');
+  
+  if (!isSupabaseConfigured()) {
+    console.error('❌ Supabase is not configured properly');
+    return false;
+  }
+
+  try {
+    // Test 1: Try to read from the table
+    console.log('\n📖 Test 1: Reading from habits_log table...');
+    const readResponse = await fetch(
+      `${SUPABASE_CONFIG.url}/rest/v1/habits_log?limit=1`,
+      {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    console.log('Response status:', readResponse.status);
+    
+    if (readResponse.status === 404 || readResponse.status === 406) {
+      const errorText = await readResponse.text();
+      console.error('❌ Table does not exist or wrong schema!');
+      console.error('Error:', errorText);
+      console.log('\n💡 SOLUTION: Run the SQL schema shown above in your Supabase dashboard.');
+      initializeHabitsLogTable();
+      return false;
+    }
+    
+    if (!readResponse.ok) {
+      const errorText = await readResponse.text();
+      console.error('❌ Read failed:', errorText);
+      return false;
+    }
+    
+    const readData = await readResponse.json();
+    console.log('✅ Read successful! Found', readData.length, 'habit log entries');
+    
+    // Test 2: Try to write a test entry
+    console.log('\n📝 Test 2: Writing test habit log...');
+    const today = new Date().toISOString().split('T')[0];
+    const testLog = {
+      date: today,
+      habit_name: 'test_habit',
+      completed: true
+    };
+    
+    const writeResponse = await fetch(
+      `${SUPABASE_CONFIG.url}/rest/v1/habits_log`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify([testLog])
+      }
+    );
+    
+    console.log('Response status:', writeResponse.status);
+    
+    if (!writeResponse.ok) {
+      const errorText = await writeResponse.text();
+      console.error('❌ Write failed:', errorText);
+      return false;
+    }
+    
+    const writeData = await writeResponse.json();
+    console.log('✅ Write successful! Created:', writeData);
+    
+    // Clean up test entry
+    if (writeData.length > 0 && writeData[0].id) {
+      await fetch(
+        `${SUPABASE_CONFIG.url}/rest/v1/habits_log?id=eq.${writeData[0].id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_CONFIG.anonKey,
+            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+          }
+        }
+      );
+    }
+    
+    console.log('\n✅✅✅ All tests passed! habits_log table is working correctly.');
+    return true;
+    
+  } catch (error) {
+    console.error('❌ Connection test failed:', error);
+    return false;
+  }
+}
+
+// Make test function globally accessible
+if (typeof window !== 'undefined') {
+  window.testHabitsLogConnection = testHabitsLogConnection;
+  window.initializeHabitsLogTable = initializeHabitsLogTable;
+  window.getAllHabitLogs = getAllHabitLogs;
+  console.log('✅ Habits log functions loaded! Type: testHabitsLogConnection()');
 }
 

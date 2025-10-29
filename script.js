@@ -547,53 +547,26 @@ function parsePriorityFromText(input) {
   return { cleanText, priority };
 }
 
-// Habits Tracker Functions
-const HABITS_STORAGE_KEY = 'dailyHabits';
-
+// Habits Tracker Functions with Database Logging
 // Get today's date string (YYYY-MM-DD)
 function getTodayDateString() {
   const today = new Date();
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 }
 
-// Load habits for today
-function loadHabits() {
+// Load habits for today from database
+async function loadHabits() {
   const today = getTodayDateString();
-  const stored = localStorage.getItem(HABITS_STORAGE_KEY);
-  let habits = {};
   
-  if (stored) {
-    try {
-      const parsed = JSON.parse(stored);
-      // Check if stored date is today, if not, reset
-      if (parsed.date === today) {
-        habits = parsed.habits || {};
-      } else {
-        // New day, reset habits
-        habits = {};
-        saveHabits(today, habits);
-      }
-    } catch (e) {
-      console.error('Error loading habits:', e);
-      habits = {};
-    }
-  }
+  // Load from database (Supabase + localStorage fallback)
+  const habits = await loadHabitLogsForDate(today);
   
-  return habits;
-}
-
-// Save habits for today
-function saveHabits(date, habits) {
-  const data = {
-    date: date || getTodayDateString(),
-    habits: habits
-  };
-  localStorage.setItem(HABITS_STORAGE_KEY, JSON.stringify(data));
+  return habits || {};
 }
 
 // Initialize habits tracker
-function initHabitsTracker() {
-  const habits = loadHabits();
+async function initHabitsTracker() {
+  const habits = await loadHabits();
   const habitIcons = document.querySelectorAll('.habit-icon');
   
   // Update UI to reflect current state
@@ -609,66 +582,59 @@ function initHabitsTracker() {
     icon.addEventListener('click', () => toggleHabit(habitName));
   });
   
-  // Schedule midnight reset
+  // Schedule midnight reset check
   scheduleMidnightReset();
 }
 
-// Toggle habit completion
-function toggleHabit(habitName) {
-  const habits = loadHabits();
+// Toggle habit completion and log to database
+async function toggleHabit(habitName) {
   const today = getTodayDateString();
+  const currentHabits = await loadHabits();
   
-  // Toggle the habit
-  habits[habitName] = !habits[habitName];
+  // Toggle the habit state
+  const newState = !currentHabits[habitName];
   
-  // Save updated habits
-  saveHabits(today, habits);
+  // Save to database (logs the date, habit name, and true/false state)
+  await saveHabitLogForDate(today, habitName, newState);
   
   // Update UI
   const icon = document.querySelector(`.habit-icon[data-habit="${habitName}"]`);
   if (icon) {
-    if (habits[habitName]) {
+    if (newState) {
       icon.classList.add('completed');
     } else {
       icon.classList.remove('completed');
     }
   }
+  
+  console.log(`📊 Habit logged: ${habitName} on ${today} = ${newState}`);
 }
 
-// Schedule reset at midnight
+// Schedule reset check at midnight (habits don't reset, but we check if date changed)
 function scheduleMidnightReset() {
   const now = new Date();
   const midnight = new Date();
   midnight.setHours(24, 0, 0, 0); // Next midnight
   const msUntilMidnight = midnight - now;
   
-  // Reset at midnight
-  setTimeout(() => {
+  // Check if date changed at midnight
+  setTimeout(async () => {
     const today = getTodayDateString();
-    const stored = localStorage.getItem(HABITS_STORAGE_KEY);
     
-    // Check if we need to reset (safety check - date might have changed)
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.date !== today) {
-          // Date changed, reset habits
-          const newHabits = {};
-          saveHabits(today, newHabits);
-          
-          // Update UI
-          document.querySelectorAll('.habit-icon').forEach(icon => {
-            icon.classList.remove('completed');
-          });
-        }
-      } catch (e) {
-        // Error parsing, just reset
-        const newHabits = {};
-        saveHabits(today, newHabits);
+    // Reload habits for the new day
+    const habits = await loadHabits();
+    
+    // Update UI for new day
+    document.querySelectorAll('.habit-icon').forEach(icon => {
+      const habitName = icon.dataset.habit;
+      if (habits[habitName]) {
+        icon.classList.add('completed');
+      } else {
+        icon.classList.remove('completed');
       }
-    }
+    });
     
-    // Schedule next reset
+    // Schedule next reset check
     scheduleMidnightReset();
   }, msUntilMidnight);
 }
