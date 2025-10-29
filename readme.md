@@ -8,10 +8,28 @@ A beautiful and functional productivity dashboard that combines task management 
 ### 📝 Task Management
 - **Intuitive Todo List** - Add, complete, and manage your daily tasks
 - **Priority System** - Organize tasks by priority levels (high, medium, low)
-- **Assignee & Supplier Tags** - Use @name to assign tasks and #supplier for suppliers
-- **Persistent Storage** - Tasks are saved automatically using localStorage
+  - Set priority via dropdown or using `!` mark in task text
+  - Click priority indicator to cycle through priorities (low → medium → high)
+- **Smart Tag Parsing** - Use natural syntax for task organization:
+  - `@name` - Assign tasks to people (assignee)
+  - `#supplier` - Tag tasks with suppliers or topics
+  - `!` - Mark as high priority
+  - All tags can be combined: `Buy groceries @mom #store !`
+- **Task Organization** - Automatic separation of tasks:
+  - Unassigned tasks appear first
+  - Assigned tasks grouped separately with divider
+- **Task Editing** - Click edit button to modify tasks and tags
+- **Cloud Storage Sync** - Advanced storage with Supabase integration:
+  - Automatic cloud synchronization to Supabase
+  - localStorage fallback for offline support
+  - Seamless sync across devices when configured
+  - All changes saved locally and synced to cloud in real-time
+- **Persistent Storage** - Tasks saved automatically with dual-layer storage
 - **Clean Interface** - Modern, responsive design that works on all devices
-- **Motivational Quotes** - Get inspired with daily advice and quotes
+- **Dynamic Quotes** - Motivational quotes loaded from Google Sheets API:
+  - Fetches quotes from external API with intelligent CSV parsing
+  - Fallback quotes if API unavailable
+  - Daily rotation based on day of year
 - **Git Integration** - Real-time repository information:
   - Terminal bar displays: last push timestamp and author name
   - Footer shows version number: `v1.[commits]-[hash]` (hover for commit message)
@@ -23,10 +41,26 @@ A beautiful and functional productivity dashboard that combines task management 
   - 4-7-8 Breathing
   - Wim Hof Method
   - Tummo Breathing
-- **Flexible Sessions** - Select 2, 5, 10 minute sessions or set custom duration
+- **Technique Navigation** - Use arrow buttons or keyboard arrows to switch between techniques
+- **Flexible Sessions** - Select from preset durations or custom time:
+  - Quick: 2-minute sessions
+  - Standard: 5 or 10-minute sessions
+  - Custom: Set any duration from 1-60 minutes
+- **Session Control** - Hover over breathing circle during session to reveal stop button
 - **Visual Guidance** - Animated breathing circle guides you through each phase
-- **Theme Options** - Choose from 6 beautiful color themes
-- **Progress Tracking** - Visual timer bar shows session progress
+  - Smooth scale animations for inhale/exhale
+  - Real-time phase indicators
+- **Theme Options** - Choose from 6 beautiful color themes:
+  - Forest Breeze (default)
+  - Ocean Calm
+  - Sunset Serenity
+  - Lavender Mist
+  - Citrine Glow
+  - Sand
+  - Theme preference saved to localStorage
+- **Progress Tracking** - Visual timer bar at top shows session progress
+  - Animated gradient progress indicator
+  - Smooth water-like flow effects
 
 ### 🎨 Design Features
 - **Responsive Layout** - Optimized for desktop, tablet, and mobile
@@ -35,6 +69,47 @@ A beautiful and functional productivity dashboard that combines task management 
 - **Accessibility** - ARIA labels and keyboard navigation support
 
 ## ⚙️ Configuration
+
+### Cloud Storage Setup (Supabase)
+The dashboard supports cloud synchronization via Supabase. To enable cloud sync:
+
+1. Open `storage.js`
+2. Find the `SUPABASE_CONFIG` object at the top of the file
+3. Update the configuration:
+```javascript
+const SUPABASE_CONFIG = {
+  url: 'https://your-project.supabase.co',  // Your Supabase project URL
+  anonKey: 'your-anon-key',                 // Your Supabase anonymous key
+  enabled: true                              // Set to true to enable cloud sync
+};
+```
+
+4. Create the todos table in your Supabase dashboard (SQL Editor):
+```sql
+CREATE TABLE IF NOT EXISTS todos (
+  id TEXT PRIMARY KEY,
+  text TEXT NOT NULL,
+  who TEXT,
+  what TEXT,
+  priority TEXT DEFAULT 'low',
+  completed BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE todos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow anonymous access" ON todos
+  FOR ALL
+  USING (true)
+  WITH CHECK (true);
+```
+
+5. Test the connection by opening browser console and running: `testSupabaseConnection()`
+
+**Note:** 
+- If Supabase is not configured, the app automatically falls back to localStorage
+- Data is always saved locally first, then synced to cloud
+- Works offline with automatic sync when connection is restored
 
 ### Git Integration Setup
 The terminal bar displays real-time Git repository information using the GitHub API. To configure it for your repository:

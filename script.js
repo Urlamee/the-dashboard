@@ -55,6 +55,7 @@ async function init() {
   fetchQuotesFromAPI();
   fetchGitInfo();
   startTerminalClock();
+  initHabitsTracker();
   
   // Event listeners
   todoForm.addEventListener('submit', addTodo);
@@ -179,10 +180,16 @@ function createTodoElement(todo) {
         class="todo-checkbox" 
         ${todo.completed ? 'checked' : ''}
       >
-      <span class="todo-text">${escapeHtml(todo.text)}</span>
-      ${todo.who ? `<span class="todo-assignee" title="Who">@${escapeHtml(todo.who)}</span>` : ''}
-      ${todo.what ? `<span class="todo-supplier" title="What">#${escapeHtml(todo.what)}</span>` : ''}
-      <span class="todo-priority priority-${todo.priority}" data-priority="${todo.priority}" title="${getPriorityText(todo.priority)} (click to change)"></span>
+      <div class="todo-main">
+        <div class="todo-text-line">
+          <span class="todo-priority priority-${todo.priority}" data-priority="${todo.priority}" title="${getPriorityText(todo.priority)} (click to change)"></span>
+          <span class="todo-text">${escapeHtml(todo.text)}</span>
+        </div>
+        ${todo.who || todo.what ? `<div class="todo-tags">
+          ${todo.who ? `<span class="todo-assignee" title="Who">@${escapeHtml(todo.who)}</span>` : ''}
+          ${todo.what ? `<span class="todo-supplier" title="What">#${escapeHtml(todo.what)}</span>` : ''}
+        </div>` : ''}
+      </div>
     </div>
     <div class="todo-actions">
       <button class="btn-link edit-btn" title="Edit">
@@ -216,7 +223,7 @@ async function handleTodoClick(e) {
   } else if (e.target.closest('.remove-btn')) {
     // Remove todo
     await removeTodo(todoId);
-  } else if (e.target.classList.contains('todo-priority')) {
+  } else if (e.target.closest('.todo-priority')) {
     // Change priority
     await changePriority(todo);
   } else {
@@ -464,18 +471,11 @@ function startTerminalClock() {
   if (!el) return;
 
   const update = () => {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const day = now.toLocaleDateString(undefined, { weekday: 'short' });
-    const month = now.toLocaleDateString(undefined, { month: 'short' });
-    const date = String(now.getDate()).padStart(2, '0');
-
     // Display git information (commit hash now in footer)
     const timestamp = gitInfo.pushTimestamp || '…';
     const author = gitInfo.authorName || '…';
     
-    el.textContent = `${hours}:${minutes} · ${day}, ${month} ${date} · Last push: ${timestamp} · @${author}`;
+    el.textContent = `Last push: ${timestamp} · @${author}`;
   };
 
   update();
@@ -545,6 +545,132 @@ function parsePriorityFromText(input) {
   // Remove the ! mark and clean up spaces
   const cleanText = input.replace(regex, ' ').replace(/\s{2,}/g, ' ').trim();
   return { cleanText, priority };
+}
+
+// Habits Tracker Functions
+const HABITS_STORAGE_KEY = 'dailyHabits';
+
+// Get today's date string (YYYY-MM-DD)
+function getTodayDateString() {
+  const today = new Date();
+  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+}
+
+// Load habits for today
+function loadHabits() {
+  const today = getTodayDateString();
+  const stored = localStorage.getItem(HABITS_STORAGE_KEY);
+  let habits = {};
+  
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      // Check if stored date is today, if not, reset
+      if (parsed.date === today) {
+        habits = parsed.habits || {};
+      } else {
+        // New day, reset habits
+        habits = {};
+        saveHabits(today, habits);
+      }
+    } catch (e) {
+      console.error('Error loading habits:', e);
+      habits = {};
+    }
+  }
+  
+  return habits;
+}
+
+// Save habits for today
+function saveHabits(date, habits) {
+  const data = {
+    date: date || getTodayDateString(),
+    habits: habits
+  };
+  localStorage.setItem(HABITS_STORAGE_KEY, JSON.stringify(data));
+}
+
+// Initialize habits tracker
+function initHabitsTracker() {
+  const habits = loadHabits();
+  const habitIcons = document.querySelectorAll('.habit-icon');
+  
+  // Update UI to reflect current state
+  habitIcons.forEach(icon => {
+    const habitName = icon.dataset.habit;
+    if (habits[habitName]) {
+      icon.classList.add('completed');
+    } else {
+      icon.classList.remove('completed');
+    }
+    
+    // Add click handler
+    icon.addEventListener('click', () => toggleHabit(habitName));
+  });
+  
+  // Schedule midnight reset
+  scheduleMidnightReset();
+}
+
+// Toggle habit completion
+function toggleHabit(habitName) {
+  const habits = loadHabits();
+  const today = getTodayDateString();
+  
+  // Toggle the habit
+  habits[habitName] = !habits[habitName];
+  
+  // Save updated habits
+  saveHabits(today, habits);
+  
+  // Update UI
+  const icon = document.querySelector(`.habit-icon[data-habit="${habitName}"]`);
+  if (icon) {
+    if (habits[habitName]) {
+      icon.classList.add('completed');
+    } else {
+      icon.classList.remove('completed');
+    }
+  }
+}
+
+// Schedule reset at midnight
+function scheduleMidnightReset() {
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0); // Next midnight
+  const msUntilMidnight = midnight - now;
+  
+  // Reset at midnight
+  setTimeout(() => {
+    const today = getTodayDateString();
+    const stored = localStorage.getItem(HABITS_STORAGE_KEY);
+    
+    // Check if we need to reset (safety check - date might have changed)
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.date !== today) {
+          // Date changed, reset habits
+          const newHabits = {};
+          saveHabits(today, newHabits);
+          
+          // Update UI
+          document.querySelectorAll('.habit-icon').forEach(icon => {
+            icon.classList.remove('completed');
+          });
+        }
+      } catch (e) {
+        // Error parsing, just reset
+        const newHabits = {};
+        saveHabits(today, newHabits);
+      }
+    }
+    
+    // Schedule next reset
+    scheduleMidnightReset();
+  }, msUntilMidnight);
 }
 
 // Initialize the app when DOM is loaded

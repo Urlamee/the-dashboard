@@ -10,7 +10,7 @@
 
 body {
   font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  font-size: 16px;
+  font-size: 14px;
   line-height: 1.5;
   color: var(--color-text);
   background: var(--gradient-bg);
@@ -19,8 +19,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 80px;
-  padding-bottom: 56px; /* prevent overlap with fixed footer */
+  padding-top: 65px;
+  padding-bottom: 48px; /* prevent overlap with fixed footer */
 }
 
 /* Footer */
@@ -35,13 +35,13 @@ body {
 }
 
 .footer-content {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
-  padding: 12px 20px;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   color: #111827;
 }
 
@@ -89,13 +89,13 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 30px;
-  max-width: 1200px;
+  padding: 12px 24px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
 .app-title {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 600;
   color: #111827;
   margin: 0;
@@ -106,15 +106,15 @@ body {
   background: #f8fafc;
   border: 1px solid var(--color-border);
   color: #111827;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.3s ease;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .menu-toggle:hover {
@@ -144,8 +144,8 @@ body {
 .nav-link {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 30px;
+  gap: 10px;
+  padding: 10px 24px;
   color: var(--color-text);
   text-decoration: none;
   transition: all 0.3s ease;
@@ -158,21 +158,21 @@ body {
 }
 
 .nav-link i {
-  font-size: 18px;
-  width: 24px;
+  font-size: 16px;
+  width: 20px;
   text-align: center;
 }
 
 .nav-link span {
-  font-size: 15px;
+  font-size: 13px;
 }
 
 .container {
-  max-width: 720px;
+  max-width: 600px;
   width: 100%;
   padding: 0;
   background: var(--color-surface);
-  border-radius: 12px;
+  border-radius: 10px;
   box-shadow: var(--shadow-lg);
   border: 1px solid var(--color-border);
   overflow: visible;
@@ -185,13 +185,13 @@ body {
 
 .terminal-bar {
   width: 100%;
-  height: 42px;
+  height: 36px;
   border-bottom: 1px solid var(--color-border);
   background: linear-gradient(180deg, #f9fafb, #ffffff);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-radius: 12px 12px 0 0;
+  border-radius: 10px 10px 0 0;
   overflow: hidden;
 }
 
@@ -201,15 +201,15 @@ body {
   padding-left: 14px;
 }
 .terminal-meta {
-  padding-right: 14px;
+  padding-right: 12px;
   color: #6b7280;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 
 .traffic-lights .dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   border: 1px solid rgba(0,0,0,0.1);
   box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
@@ -219,9 +219,64 @@ body {
 .traffic-lights .dot.yellow { background: #f59e0b; }
 .traffic-lights .dot.green { background: #22c55e; }
 
+/* Habits Tracker */
+.habits-tracker {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding-left: 14px;
+}
+
+.habit-icon {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #4b5563;
+  font-size: 11px;
+  position: relative;
+  opacity: 1;
+  font-weight: 900;
+}
+
+.habit-icon i {
+  font-weight: 900;
+}
+
+.habit-icon:hover {
+  opacity: 1;
+  color: #374151;
+  transform: scale(1.1);
+}
+
+.habit-icon.completed {
+  opacity: 0.25;
+  color: #d1d5db;
+}
+
+.habit-icon.completed:hover {
+  opacity: 0.35;
+  color: #9ca3af;
+}
+
+.habit-icon i {
+  transition: transform 0.2s ease;
+}
+
+.habit-icon:active i {
+  transform: scale(0.9);
+}
+
+
 .container .terminal-body {
-  padding: 20px 24px 28px 24px;
-  border-radius: 0 0 12px 12px;
+  padding: 16px 20px 20px 20px;
+  border-radius: 0 0 10px 10px;
   overflow: hidden;
 }
 
@@ -238,8 +293,8 @@ body {
 
 .form-input {
   flex: 1;
-  font-size: 16px;
-  padding: 12px 15px;
+  font-size: 14px;
+  padding: 10px 12px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   outline: none;
@@ -257,13 +312,13 @@ body {
   color: var(--color-primary);
   border: 1px solid var(--color-primary);
   border-radius: 6px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
+  min-width: 42px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -280,7 +335,7 @@ body {
 }
 
 .submit-arrow i {
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .priority-select {
@@ -399,11 +454,11 @@ body {
 }
 
 .btn-link {
-  font-size: 16px;
+  font-size: 14px;
   background-color: transparent;
   color: #64748b;
   border: none;
-  padding: 8px;
+  padding: 6px;
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.3s ease;
@@ -439,7 +494,7 @@ body {
 
 /* Todos */
 .todos {
-  margin-top: 20px;
+  margin-top: 16px;
   list-style: none;
 }
 
@@ -447,7 +502,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
+  padding: 8px 0;
   margin-bottom: 0;
   background: transparent;
   border: none;
@@ -496,35 +551,62 @@ body {
 
 .todo-content {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex: 1;
-  gap: 10px;
+  gap: 12px;
 }
 
 .todo-checkbox {
-  width: 20px;
-  height: 20px;
-  margin-right: 15px;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  margin-right: 0;
   cursor: pointer;
   accent-color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.todo-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.todo-text-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.4;
 }
 
 .todo-text {
-  flex: 1;
   font-weight: 500;
+  font-size: 14px;
   color: var(--color-text);
   border-left: 3px solid transparent;
   padding-left: 6px;
+  flex: 1;
+  word-break: break-word;
+}
+
+.todo-tags {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-left: 14px;
+  margin-top: 2px;
 }
 
 .todo-priority {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   display: inline-block;
-  margin-right: 10px;
   cursor: pointer;
   transition: transform 0.2s ease;
+  flex-shrink: 0;
 }
 
 .todo-priority:hover {
@@ -532,25 +614,25 @@ body {
 }
 
 .todo-assignee {
-  margin-right: 10px;
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   background: #ecfeff;
   color: #0e7490;
   border: 1px solid #a5f3fc;
+  white-space: nowrap;
 }
 
 .todo-supplier {
-  margin-right: 10px;
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   background: #fefce8;
   color: #854d0e;
   border: 1px solid #fde68a;
+  white-space: nowrap;
 }
 
 .priority-high {
@@ -623,7 +705,7 @@ body {
 }
 .trademark {
   color: #6b7280;
-  font-size: 12px;
+  font-size: 11px;
   cursor: default;
 }
 
@@ -642,12 +724,12 @@ body {
 .version-number {
   color: var(--color-primary);
   font-weight: 600;
-  padding: 2px 6px;
+  padding: 2px 5px;
   border-radius: 4px;
   transition: all 0.3s ease;
   cursor: help;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
+  font-size: 10px;
   display: inline-block;
   border: 1px solid transparent;
 }
@@ -725,48 +807,68 @@ body {
 
 @media (max-width: 600px) {
   body {
-    padding-top: 70px;
+    padding-top: 60px;
+    padding-bottom: 42px;
+    font-size: 13px;
   }
 
   .header-content {
-    padding: 12px 20px;
+    padding: 10px 16px;
   }
 
   .app-title {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .menu-toggle {
-    width: 36px;
-    height: 36px;
-    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
   }
 
   .nav-link {
-    padding: 12px 20px;
+    padding: 10px 16px;
+    gap: 8px;
+  }
+
+  .nav-link i {
+    font-size: 14px;
+    width: 18px;
+  }
+
+  .nav-link span {
+    font-size: 12px;
   }
 
   .container {
-    margin: 15px;
+    margin: 12px;
+    max-width: calc(100% - 24px);
   }
   
   .form-row {
     flex-direction: row;
-    gap: 8px;
+    gap: 6px;
   }
   
   .form-input {
     flex: 1;
+    font-size: 13px;
+    padding: 9px 10px;
   }
   
   .submit-arrow {
     flex-shrink: 0;
-    padding: 12px 14px;
+    padding: 9px 12px;
+    min-width: 38px;
+  }
+
+  .submit-arrow i {
+    font-size: 11px;
   }
   
   .stats {
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
   }
   
   .filter-buttons {
@@ -774,11 +876,71 @@ body {
   }
   
   .advice-tooltip {
-    width: 240px;
-    padding: 12px 16px;
+    width: 220px;
+    padding: 10px 14px;
   }
   
   .advice-text {
-    font-size: 12px;
+    font-size: 11px;
+  }
+
+  .terminal-bar {
+    height: 32px;
+  }
+
+  .terminal-meta {
+    font-size: 10px;
+    padding-right: 10px;
+  }
+  
+  .habits-tracker {
+    gap: 8px;
+    padding-left: 12px;
+  }
+  
+  .habit-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+  }
+  
+
+  .traffic-lights {
+    padding-left: 12px;
+  }
+
+  .traffic-lights .dot {
+    width: 9px;
+    height: 9px;
+  }
+
+  .container .terminal-body {
+    padding: 14px 16px 16px 16px;
+  }
+
+  .todos {
+    margin-top: 12px;
+  }
+
+  .todo-checkbox {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+  }
+
+  .todo-text {
+    font-size: 13px;
+  }
+
+  .footer-content {
+    padding: 8px 12px;
+  }
+
+  .trademark {
+    font-size: 10px;
+  }
+
+  .version-number {
+    font-size: 9px;
   }
 }
