@@ -3,8 +3,6 @@ const todoForm = document.getElementById('todo-form');
 const todoInput = document.getElementById('todo-input');
 const prioritySelect = document.getElementById('priority-select');
 const todoList = document.getElementById('todo-list');
-const menuToggle = document.getElementById('menuToggle');
-const navMenu = document.getElementById('navMenu');
 
 // State
 let todos = [];
@@ -60,22 +58,6 @@ async function init() {
   // Event listeners
   todoForm.addEventListener('submit', addTodo);
   todoList.addEventListener('click', handleTodoClick);
-  
-  // Menu toggle
-  if (menuToggle) {
-    menuToggle.addEventListener('click', () => {
-      navMenu.classList.toggle('active');
-      menuToggle.classList.toggle('active');
-    });
-  }
-  
-  // Close menu when clicking outside
-  document.addEventListener('click', (e) => {
-    if (navMenu && menuToggle && !e.target.closest('.app-header')) {
-      navMenu.classList.remove('active');
-      menuToggle.classList.remove('active');
-    }
-  });
 }
 
 // Load todos (now uses storage.js which handles Supabase + localStorage)
@@ -388,12 +370,12 @@ function updateVersionDisplay() {
   if (!versionEl) return;
   
   if (gitInfo.commitCount > 0) {
-    versionEl.textContent = `v1.${gitInfo.commitCount}-${gitInfo.commitHash}`;
+    versionEl.textContent = `v2.${gitInfo.commitCount}-${gitInfo.commitHash}`;
     if (versionHashEl && gitInfo.commitMessage) {
       versionHashEl.textContent = gitInfo.commitMessage;
     }
   } else {
-    versionEl.textContent = 'v1.0-dev';
+    versionEl.textContent = 'v2.0-dev';
     if (versionHashEl) {
       versionHashEl.textContent = 'Development version';
     }
@@ -640,6 +622,24 @@ function scheduleMidnightReset() {
 }
 
 // Initialize the app when DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', async () => {
+  // Check authentication first
+  const isAuth = await initAuth();
+  
+  if (isAuth) {
+    // User is authenticated, initialize app
+    await init();
+    // Initialize logout button
+    if (typeof initLogoutButton === 'function') {
+      initLogoutButton();
+    }
+  } else {
+    // User needs to login - set up login form handler
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', handleLogin);
+    }
+  }
+});
 
 

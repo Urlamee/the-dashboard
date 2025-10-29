@@ -70,6 +70,57 @@ A beautiful and functional productivity dashboard that combines task management 
 
 ## ⚙️ Configuration
 
+### Authentication Setup
+The dashboard uses a simple codename-based authentication system that **requires Supabase**. The codename must be stored in your Supabase database.
+
+**⚠️ Important:** There is no default codename. You must set up Supabase and insert your codename in the database.
+
+**Setup Steps:**
+
+1. **Configure Supabase** (if not already done):
+   - Set up your Supabase project in `storage.js` (see Cloud Storage Setup section below)
+
+2. **Insert your codename into Supabase:**
+   - Run this SQL in your Supabase dashboard (SQL Editor):
+   ```sql
+   -- Create the app_settings table
+   CREATE TABLE IF NOT EXISTS app_settings (
+     key TEXT PRIMARY KEY,
+     value TEXT NOT NULL,
+     updated_at TIMESTAMPTZ DEFAULT NOW()
+   );
+
+   -- Enable Row Level Security
+   ALTER TABLE app_settings ENABLE ROW LEVEL SECURITY;
+
+   -- Create policy for anonymous access
+   CREATE POLICY "Allow anonymous access" ON app_settings
+     FOR ALL
+     USING (true)
+     WITH CHECK (true);
+
+   -- Insert your codename (REPLACE 'YOUR_CODENAME_HERE' with your actual codename)
+   INSERT INTO app_settings (key, value, updated_at)
+   VALUES ('auth_codename', 'YOUR_CODENAME_HERE', NOW())
+   ON CONFLICT (key) 
+   DO UPDATE SET 
+     value = EXCLUDED.value,
+     updated_at = NOW();
+   ```
+
+3. **How it works:**
+   - On first visit, you'll see a login screen
+   - Enter your codename (stored in Supabase) to access the dashboard
+   - **Session timeout:** You stay logged in for **30 days** (configurable in `auth.js`)
+   - Session is automatically validated on each page load
+   - Authentication only accepts codenames from Supabase database
+   - **Logout:** Click the menu button (☰) in the header and select "Logout"
+
+**Security Notes:**
+- Only codenames stored in your Supabase `app_settings` table will work
+- If Supabase is not configured or codename not found, authentication will fail
+- This is suitable for personal use. For production apps, consider using Supabase Auth or similar services.
+
 ### Cloud Storage Setup (Supabase)
 The dashboard supports cloud synchronization via Supabase. To enable cloud sync:
 

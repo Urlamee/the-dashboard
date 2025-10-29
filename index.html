@@ -16,19 +16,45 @@
     <title>Todo List</title>
   </head>
   <body>
+    <!-- Login Modal -->
+    <div class="login-modal" id="login-modal">
+      <div class="login-container">
+        <div class="login-content">
+          <h2 class="login-title">Dashboard Access</h2>
+          <p class="login-subtitle">Enter your codename to continue</p>
+          <form id="login-form" class="login-form">
+            <div class="login-input-group">
+              <input
+                type="text"
+                id="codename-input"
+                class="codename-input"
+                placeholder="Codename"
+                autocomplete="off"
+                required
+              />
+            </div>
+            <div class="login-error" id="login-error"></div>
+            <button type="submit" class="login-button">
+              Access Dashboard
+            </button>
+          </form>
+          <p class="login-hint">This is a personal dashboard protected by codename authentication</p>
+        </div>
+      </div>
+    </div>
+
     <header class="app-header">
       <div class="header-content">
         <h1 class="app-title">Dashboard</h1>
-        <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
-          <i class="fa-solid fa-bars"></i>
-        </button>
+        <nav class="header-nav">
+          <a href="breather-app/index.html" class="header-icon" title="Breathing Exercises" aria-label="Breathing Exercises">
+            <i class="fa-solid fa-spa"></i>
+          </a>
+          <button class="header-icon logout-btn" id="logoutBtn" title="Logout" aria-label="Logout">
+            <i class="fa-solid fa-sign-out-alt"></i>
+          </button>
+        </nav>
       </div>
-      <nav class="nav-menu" id="navMenu">
-        <a href="breather-app/index.html" class="nav-link">
-          <i class="fa-solid fa-spa"></i>
-          <span>Breathing Exercises</span>
-        </a>
-      </nav>
     </header>
 
     <div class="container">
@@ -94,7 +120,7 @@
             </div>
           </div>
           <div class="version-container">
-            <span class="version-number" id="version-number">v1.0-dev</span>
+            <span class="version-number" id="version-number">v2.0-dev</span>
             <div class="version-tooltip" id="version-tooltip">
               <p id="version-hash-text"></p>
             </div>
@@ -104,6 +130,7 @@
     </footer>
 
     <script src="storage.js?v=2.1"></script>
+    <script src="auth.js?v=1.0"></script>
     <script src="script.js?v=2.1"></script>
   </body>
 </html>
