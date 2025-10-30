@@ -52,6 +52,11 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
+// Normalize any free-text input to lowercase
+function toLowercaseInput(input) {
+  return (input || '').toString().toLowerCase();
+}
+
 // Add new todo or quote
 async function addTodo(e) {
   e.preventDefault();
@@ -82,8 +87,28 @@ async function addTodo(e) {
     todoInput.value = '';
     return;
   }
+
+  // @log input
+  if (/^@log:?\s+/i.test(text)) {
+    const logText = text.replace(/^@log:?\s+/i, '').trim();
+    if (!logText) {
+      alert('Please enter a log message after @log');
+      todoInput.value = '';
+      return;
+    }
+    const result = await addLogToSupabase(toLowercaseInput(logText));
+    if (result.ok) {
+      alert('Work log saved!');
+    } else {
+      alert(`Error adding log (${result.status}): ${result.error || 'Unknown error'}`);
+      console.error('Log insert error', result);
+    }
+    todoInput.value = '';
+    return;
+  }
   
-  const { cleanText: afterWhoText, who } = parseAssigneeFromText(text);
+  const lowerInput = toLowercaseInput(text);
+  const { cleanText: afterWhoText, who } = parseAssigneeFromText(lowerInput);
   const { cleanText: afterWhatText, what } = parseSupplierFromText(afterWhoText);
   const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterWhatText);
   
@@ -591,6 +616,30 @@ async function addQuoteToSupabase(quoteText) {
         'Prefer': 'return=representation'
       },
       body: JSON.stringify([{quote_text: quoteText}]),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      return { ok: false, status: res.status, error: text };
+    }
+    return { ok: true, status: res.status };
+  } catch(e) {
+    return { ok: false, status: 0, error: e?.message || String(e) };
+  }
+}
+
+// Add a new work log via Supabase REST
+async function addLogToSupabase(logText) {
+  try {
+    const url = `${SUPABASE_CONFIG.url}/rest/v1/work_log`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify([{log_text: logText}]),
     });
     if (!res.ok) {
       const text = await res.text().catch(() => '');
