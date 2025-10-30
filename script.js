@@ -5,23 +5,7 @@ const todoList = document.getElementById('todo-list');
 
 let todos = [];
 
-const QUOTES_API_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTHESDUKRMcYfz1CeEJxfkKtR1oOVptvny3yq4CkuUPu488JtF1imxtKcffANnVyZExQOYuqdkfoiBF/pub?output=csv';
-
-const fallbackQuotes = [
-  '"The way to get started is to quit talking and begin doing." - Walt Disney',
-  '"Success is not final, failure is not fatal: it is the courage to continue that counts." - Winston Churchill',
-  '"The future belongs to those who believe in the beauty of their dreams." - Eleanor Roosevelt',
-  '"It is during our darkest moments that we must focus to see the light." - Aristotle',
-  '"The only way to do great work is to love what you do." - Steve Jobs',
-  '"Innovation distinguishes between a leader and a follower." - Steve Jobs',
-  '"Life is what happens to you while you\'re busy making other plans." - John Lennon',
-  '"Don\'t be afraid to give up the good to go for the great." - John D. Rockefeller',
-  '"You miss 100% of the shots you don\'t take." - Wayne Gretzky',
-  '"The only impossible journey is the one you never begin." - Tony Robbins',
-  '"Success is walking from failure to failure with no loss of enthusiasm." - Winston Churchill'
-];
-
-let dailyAdvice = [...fallbackQuotes];
+let dailyAdvice = [];
 
 const GIT_CONFIG = {
   owner: 'Urlamee',
@@ -41,7 +25,7 @@ let gitInfo = {
 
 async function init() {
   await loadTodos();
-  fetchQuotesFromAPI();
+  await fetchQuotesFromSupabase();
   fetchGitInfo();
   startTerminalClock();
   initHabitsTracker();
@@ -68,7 +52,7 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// Add new todo
+// Add new todo or quote
 async function addTodo(e) {
   e.preventDefault();
   
@@ -76,6 +60,26 @@ async function addTodo(e) {
   
   if (!text) {
     alert('Please enter a todo item');
+    return;
+  }
+
+  // @quote input
+  if (/^@quote:?\s+/i.test(text)) {
+    const quoteText = text.replace(/^@quote:?\s+/i, '').trim();
+    if (!quoteText) {
+      alert('Please enter a quote after @quote');
+      todoInput.value = '';
+      return;
+    }
+    const result = await addQuoteToSupabase(quoteText);
+    if (result.ok) {
+      alert('Quote added!');
+      await fetchQuotesFromSupabase(); // refresh dailyAdvice
+    } else {
+      alert(`Error adding quote (${result.status}): ${result.error || 'Unknown error'}`);
+      console.error('Quote insert error', result);
+    }
+    todoInput.value = '';
     return;
   }
   
@@ -92,7 +96,9 @@ async function addTodo(e) {
     what: what || null,
     priority: priority,
     completed: false,
-    createdAt: new Date().toISOString()
+    archived: false,
+    createdAt: new Date().toISOString(),
+    completedAt: null
   };
   
   todos.unshift(newTodo);
@@ -103,28 +109,52 @@ async function addTodo(e) {
   prioritySelect.value = 'low';
 }
 
+// -- ARCHIVE VIEW LOGIC --
+let archiveMode = false;
+const archiveBtn = document.getElementById('archive-btn');
+const archivedList = document.getElementById('archived-list');
+
+if (archiveBtn && archivedList) {
+  archiveBtn.addEventListener('click', () => {
+    archiveMode = !archiveMode;
+    archiveBtn.classList.toggle('active', archiveMode);
+    archiveBtn.title = archiveMode ? 'Hide Archived Tasks' : 'Show Archived Tasks';
+    archiveBtn.setAttribute('aria-label', archiveMode ? 'Hide Archived Tasks' : 'Show Archived Tasks');
+    renderTodos();
+  });
+}
+
 function renderTodos() {
-  todoList.innerHTML = '';
-  
-  const unassigned = todos.filter(t => !t.who);
-  const assigned = todos.filter(t => t.who);
-
-  unassigned.forEach(todo => {
-    const li = createTodoElement(todo);
-    todoList.appendChild(li);
-  });
-
-  if (assigned.length > 0) {
-    const divider = document.createElement('li');
-    divider.className = 'todo-divider';
-    divider.innerHTML = '<span>Assigned tasks</span>';
-    todoList.appendChild(divider);
+  if (archiveMode) {
+    archivedList.style.display = '';
+    todoList.style.display = 'none';
+    archivedList.innerHTML = '';
+    const archived = todos.filter(t => t.archived);
+    archived.forEach(todo => {
+      const li = createArchivedTodoElement(todo);
+      archivedList.appendChild(li);
+    });
+  } else {
+    archivedList.style.display = 'none';
+    todoList.style.display = '';
+    todoList.innerHTML = '';
+    const unassigned = todos.filter(t => !t.archived && !t.who);
+    const assigned = todos.filter(t => !t.archived && t.who);
+    unassigned.forEach(todo => {
+      const li = createTodoElement(todo);
+      todoList.appendChild(li);
+    });
+    if (assigned.length > 0) {
+      const divider = document.createElement('li');
+      divider.className = 'todo-divider';
+      divider.innerHTML = '<span>Assigned tasks</span>';
+      todoList.appendChild(divider);
+    }
+    assigned.forEach(todo => {
+      const li = createTodoElement(todo);
+      todoList.appendChild(li);
+    });
   }
-
-  assigned.forEach(todo => {
-    const li = createTodoElement(todo);
-    todoList.appendChild(li);
-  });
 }
 
 // Create todo element
@@ -164,6 +194,26 @@ function createTodoElement(todo) {
   return li;
 }
 
+function createArchivedTodoElement(todo) {
+  const li = document.createElement('li');
+  li.className = 'todo-item completed';
+  li.dataset.id = todo.id;
+  const completedAt = todo.completedAt ? (new Date(todo.completedAt)).toLocaleString() : '';
+  li.innerHTML = `
+    <div class="todo-content">
+      <input type="checkbox" class="todo-checkbox" checked disabled>
+      <div class="todo-main">
+        <div class="todo-text-line">
+          <span class="todo-priority priority-${todo.priority}" data-priority="${todo.priority}"></span>
+          <span class="todo-text">${escapeHtml(todo.text)}</span>
+        </div>
+        ${(todo.who || todo.what) ? `<div class="todo-tags">${todo.who ? `<span class="todo-assignee">@${escapeHtml(todo.who)}</span>` : ''}${todo.what ? `<span class="todo-supplier">#${escapeHtml(todo.what)}</span>` : ''}</div>` : ''}
+        <div class="todo-completed-at">Completed: ${completedAt}</div>
+      </div>
+    </div>`;
+  return li;
+}
+
 async function handleTodoClick(e) {
   const todoItem = e.target.closest('.todo-item');
   if (!todoItem) return;
@@ -172,7 +222,17 @@ async function handleTodoClick(e) {
   const todo = todos.find(t => t.id === todoId);
   
   if (e.target.classList.contains('todo-checkbox')) {
-    todo.completed = !todo.completed;
+    if (!todo.completed) {
+      // Mark as completed, also archive and set completedAt to now
+      todo.completed = true;
+      todo.archived = true;
+      todo.completedAt = new Date().toISOString();
+    } else {
+      // Optionally allow un-completing and unarchiving
+      todo.completed = false;
+      todo.archived = false;
+      todo.completedAt = null;
+    }
     await saveTodos();
     renderTodos();
   } else if (e.target.closest('.edit-btn')) {
@@ -337,46 +397,29 @@ function updateVersionDisplay() {
   }
 }
 
-async function fetchQuotesFromAPI() {
+async function fetchQuotesFromSupabase() {
   try {
-    const response = await fetch(QUOTES_API_URL);
-    const csvText = await response.text();
-    
-    const lines = csvText.split('\n');
-    const quotes = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (line) {
-        const columns = parseCSVLine(line);
-        
-        if (columns.length >= 2) {
-          const id = columns[0];
-          const quote = columns[1];
-          
-          const cleanQuote = quote.replace(/^"(.*)"$/, '$1').trim();
-          
-          if (cleanQuote && 
-              cleanQuote.length > 10 && 
-              cleanQuote.length < 1000 && 
-              !cleanQuote.includes('undefined') &&
-              !cleanQuote.includes('null')) {
-            quotes.push(cleanQuote);
-          }
-        }
+    const url = `${SUPABASE_CONFIG.url}/rest/v1/quotes?order=created_at.asc`;
+    const response = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        'Content-Type': 'application/json'
       }
-    }
-    
-    if (quotes.length > 0) {
-      dailyAdvice = quotes;
+    });
+    if (response.ok) {
+      const quotes = await response.json();
+      if (quotes.length > 0) {
+        dailyAdvice = quotes.map(q => q.quote_text);
+      } else {
+        dailyAdvice = [];
+      }
     } else {
-      dailyAdvice = [...fallbackQuotes];
+      dailyAdvice = [];
     }
-  } catch (error) {
-    dailyAdvice = [...fallbackQuotes];
+  } catch (e) {
+    dailyAdvice = [];
   }
-  
-  // Set the daily advice after fetching
   setDailyAdvice();
 }
 
@@ -533,6 +576,30 @@ function scheduleMidnightReset() {
     
     scheduleMidnightReset();
   }, msUntilMidnight);
+}
+
+// Add a new quote via Supabase REST
+async function addQuoteToSupabase(quoteText) {
+  try {
+    const url = `${SUPABASE_CONFIG.url}/rest/v1/quotes`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=representation'
+      },
+      body: JSON.stringify([{quote_text: quoteText}]),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      return { ok: false, status: res.status, error: text };
+    }
+    return { ok: true, status: res.status };
+  } catch(e) {
+    return { ok: false, status: 0, error: e?.message || String(e) };
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {

@@ -41,7 +41,9 @@ async function loadTodosFromSupabase() {
         what: item.what || null,
         priority: item.priority,
         completed: item.completed,
-        createdAt: item.created_at
+        archived: item.archived || false,
+        createdAt: item.created_at,
+        completedAt: item.completed_at || null
       }));
     } else {
       await response.text();
@@ -133,7 +135,9 @@ async function saveTodosToSupabase(todos) {
         what: todo.what || null,
         priority: todo.priority || 'low',
         completed: todo.completed || false,
-        created_at: todo.createdAt || new Date().toISOString()
+        archived: todo.archived || false,
+        created_at: todo.createdAt || new Date().toISOString(),
+        completed_at: todo.completedAt || null
       }));
 
       const upsertUrl = `${SUPABASE_CONFIG.url}/rest/v1/todos`;
@@ -174,7 +178,9 @@ async function saveTodosToSupabase(todos) {
                 what: todo.what,
                 priority: todo.priority,
                 completed: todo.completed,
-                created_at: todo.created_at
+                archived: todo.archived,
+                created_at: todo.created_at,
+                completed_at: todo.completed_at
               })
             }
           );

@@ -47,7 +47,7 @@
       <div class="header-content">
         <h1 class="app-title">Dashboard</h1>
         <nav class="header-nav">
-          <a href="breather-app/index.html" class="header-icon" title="Breathing Exercises" aria-label="Breathing Exercises">
+          <a href="breather-app/index.html?from=dashboard" class="header-icon" title="Breathing Exercises" aria-label="Breathing Exercises">
             <i class="fa-solid fa-spa"></i>
           </a>
           <button class="header-icon logout-btn" id="logoutBtn" title="Logout" aria-label="Logout">
@@ -103,9 +103,15 @@
           </select>
         </div>
       </form>
-
       <ul id="todo-list" class="todos">
       </ul>
+      <ul id="archived-list" class="todos" style="display:none;"></ul>
+      
+      <div class="task-footer">
+        <button id="archive-btn" class="floating-archive-btn" type="button" title="Show Archived Tasks" aria-label="Show Archived Tasks">
+          <i class="fa-solid fa-box-archive"></i>
+        </button>
+      </div>
 
       </div>
     </div>
