@@ -43,7 +43,9 @@ async function loadTodosFromSupabase() {
         completed: item.completed,
         archived: item.archived || false,
         createdAt: item.created_at,
-        completedAt: item.completed_at || null
+        completedAt: item.completed_at || null,
+        notes: item.notes || null,
+        order: item.order || 0
       }));
     } else {
       await response.text();
@@ -137,7 +139,9 @@ async function saveTodosToSupabase(todos) {
         completed: todo.completed || false,
         archived: todo.archived || false,
         created_at: todo.createdAt || new Date().toISOString(),
-        completed_at: todo.completedAt || null
+        completed_at: todo.completedAt || null,
+        notes: todo.notes || null,
+        order: todo.order || 0
       }));
 
       const upsertUrl = `${SUPABASE_CONFIG.url}/rest/v1/todos`;
@@ -180,7 +184,9 @@ async function saveTodosToSupabase(todos) {
                 completed: todo.completed,
                 archived: todo.archived,
                 created_at: todo.created_at,
-                completed_at: todo.completed_at
+                completed_at: todo.completed_at,
+                notes: todo.notes,
+                order: todo.order
               })
             }
           );

@@ -14,8 +14,138 @@
     <link rel="stylesheet" href="theme.css" />
     <link rel="stylesheet" href="style.css" />
     <title>Todo List</title>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   </head>
   <body>
+    <!-- Alert Modal -->
+    <div class="custom-modal" id="alert-modal" style="display: none;">
+      <div class="custom-modal-container">
+        <div class="custom-modal-header">
+          <h3 class="custom-modal-title" id="alert-modal-title">Alert</h3>
+        </div>
+        <div class="custom-modal-body">
+          <p class="custom-modal-message" id="alert-modal-message"></p>
+        </div>
+        <div class="custom-modal-footer">
+          <button class="custom-modal-btn custom-modal-confirm" id="alert-modal-ok" type="button">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div class="custom-modal" id="confirm-modal" style="display: none;">
+      <div class="custom-modal-container">
+        <div class="custom-modal-header">
+          <h3 class="custom-modal-title" id="confirm-modal-title">Confirm</h3>
+        </div>
+        <div class="custom-modal-body">
+          <p class="custom-modal-message" id="confirm-modal-message"></p>
+        </div>
+        <div class="custom-modal-footer">
+          <button class="custom-modal-btn custom-modal-cancel" id="confirm-modal-cancel" type="button">
+            Cancel
+          </button>
+          <button class="custom-modal-btn custom-modal-confirm" id="confirm-modal-confirm" type="button">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prompt Modal -->
+    <div class="custom-modal" id="prompt-modal" style="display: none;">
+      <div class="custom-modal-container">
+        <div class="custom-modal-header">
+          <h3 class="custom-modal-title" id="prompt-modal-title">Input</h3>
+        </div>
+        <div class="custom-modal-body">
+          <p class="custom-modal-message" id="prompt-modal-message"></p>
+          <input 
+            type="text" 
+            class="custom-modal-input" 
+            id="prompt-modal-input"
+            placeholder="Enter value..."
+          />
+        </div>
+        <div class="custom-modal-footer">
+          <button class="custom-modal-btn custom-modal-cancel" id="prompt-modal-cancel" type="button">
+            Cancel
+          </button>
+          <button class="custom-modal-btn custom-modal-confirm" id="prompt-modal-ok" type="button">
+            OK
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Todo Modal -->
+    <div class="notes-modal" id="edit-todo-modal" style="display: none;">
+      <div class="notes-modal-container">
+        <div class="notes-modal-header">
+          <h3 class="notes-modal-title">Edit Task</h3>
+          <button class="notes-modal-close" id="edit-todo-close" type="button" title="Close">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+        <div class="notes-modal-body">
+          <textarea 
+            id="edit-todo-textarea" 
+            class="notes-textarea" 
+            placeholder="Edit your task (supports @who #what !priority)..."
+            rows="3"
+          ></textarea>
+        </div>
+        <div class="notes-modal-footer">
+          <button class="notes-modal-btn notes-modal-delete" id="edit-todo-delete" type="button">
+            Delete Task
+          </button>
+          <div class="notes-modal-actions">
+            <button class="notes-modal-btn notes-modal-cancel" id="edit-todo-cancel" type="button">
+              Cancel
+            </button>
+            <button class="notes-modal-btn notes-modal-save" id="edit-todo-save" type="button">
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes Modal -->
+    <div class="notes-modal" id="notes-modal" style="display: none;">
+      <div class="notes-modal-container">
+        <div class="notes-modal-header">
+          <h3 class="notes-modal-title">Edit Notes</h3>
+          <button class="notes-modal-close" id="notes-modal-close" type="button" title="Close">
+            <i class="fa-solid fa-times"></i>
+          </button>
+        </div>
+        <div class="notes-modal-body">
+          <textarea 
+            id="notes-textarea" 
+            class="notes-textarea" 
+            placeholder="Enter notes here... (supports multiple lines)"
+            rows="8"
+          ></textarea>
+        </div>
+        <div class="notes-modal-footer">
+          <button class="notes-modal-btn notes-modal-delete" id="notes-modal-delete" type="button">
+            Delete Notes
+          </button>
+          <div class="notes-modal-actions">
+            <button class="notes-modal-btn notes-modal-cancel" id="notes-modal-cancel" type="button">
+              Cancel
+            </button>
+            <button class="notes-modal-btn notes-modal-save" id="notes-modal-save" type="button">
+              Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Login Modal -->
     <div class="login-modal" id="login-modal">
       <div class="login-container">
@@ -103,15 +233,34 @@
           </select>
         </div>
       </form>
+      
+      <div class="task-controls">
+        <div class="task-search-container">
+          <i class="fa-solid fa-search task-search-icon"></i>
+          <input 
+            type="text" 
+            id="task-search" 
+            class="task-search-input" 
+            placeholder="Filter tasks..."
+            autocomplete="off"
+          />
+        </div>
+        <div class="task-right-controls">
+          <span class="task-stats" id="task-stats" title="a=active · d=done today · l=logs today · q=quotes today">0a · 0d · 0l · 0q</span>
+          <div class="task-control-buttons">
+            <button id="reorder-btn" class="task-control-btn" type="button" title="Reorder Todos" aria-label="Toggle reorder mode">
+              <i class="fa-solid fa-arrows-up-down"></i>
+            </button>
+            <button id="archive-btn" class="task-control-btn" type="button" title="Show Archived Tasks" aria-label="Show Archived Tasks">
+              <i class="fa-solid fa-box-archive"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+      
       <ul id="todo-list" class="todos">
       </ul>
       <ul id="archived-list" class="todos" style="display:none;"></ul>
-      
-      <div class="task-footer">
-        <button id="archive-btn" class="floating-archive-btn" type="button" title="Show Archived Tasks" aria-label="Show Archived Tasks">
-          <i class="fa-solid fa-box-archive"></i>
-        </button>
-      </div>
 
       </div>
     </div>
