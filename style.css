@@ -474,8 +474,8 @@ body {
 
 .todos li {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   padding: 8px 0;
   margin-bottom: 0;
   background: transparent;
@@ -489,7 +489,7 @@ body {
   background: transparent;
   border: none !important;
   box-shadow: none;
-  justify-content: center;
+  align-items: center;
   padding: 4px 0;
   transition: none;
   pointer-events: none;
@@ -1594,15 +1594,13 @@ body.reorder-mode .edit-btn {
 .todo-notes {
   padding: 8px 14px;
   padding-left: 48px;
+  padding-right: 36px;
   margin-top: 6px;
   background: transparent;
   border-left: 3px solid var(--color-primary);
   border-radius: 4px;
   animation: slideDown 0.2s ease;
   position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .notes-content {
@@ -1613,16 +1611,22 @@ body.reorder-mode .edit-btn {
   word-break: break-word;
   padding: 4px;
   border-radius: 3px;
+  width: 100%;
 }
 
 .edit-note-btn {
-  align-self: flex-end;
+  position: absolute;
+  top: 4px;
+  right: 4px;
   font-size: 12px;
   padding: 4px 6px;
   color: #94a3b8;
   display: flex;
   align-items: center;
+  justify-content: center;
   transition: all 0.2s ease;
+  z-index: 1;
+  background: transparent;
 }
 
 .edit-note-btn:hover {
