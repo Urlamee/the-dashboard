@@ -248,6 +248,9 @@
         <div class="task-right-controls">
           <span class="task-stats" id="task-stats" title="a=active · d=done today · l=logs today · q=quotes today">0a · 0d · 0l · 0q</span>
           <div class="task-control-buttons">
+            <button id="reminders-btn" class="task-control-btn" type="button" title="Show Reminders" aria-label="Show Reminders">
+              <i class="fa-solid fa-clock"></i>
+            </button>
             <button id="reorder-btn" class="task-control-btn" type="button" title="Reorder Todos" aria-label="Toggle reorder mode">
               <i class="fa-solid fa-arrows-up-down"></i>
             </button>
@@ -260,6 +263,7 @@
       
       <ul id="todo-list" class="todos">
       </ul>
+      <ul id="reminders-list" class="todos" style="display:none;"></ul>
       <ul id="archived-list" class="todos" style="display:none;"></ul>
 
       </div>

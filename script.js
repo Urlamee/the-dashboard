@@ -4,6 +4,7 @@ const prioritySelect = document.getElementById('priority-select');
 const todoList = document.getElementById('todo-list');
 
 let todos = [];
+let reminders = [];
 
 let dailyAdvice = [];
 let quotesData = []; // Store full quote objects for stats
@@ -26,6 +27,7 @@ let gitInfo = {
 
 async function init() {
   await loadTodos();
+  await loadReminders();
   await fetchQuotesFromSupabase();
   fetchGitInfo();
   startTerminalClock();
@@ -33,11 +35,13 @@ async function init() {
   initNotesModal();
   initEditTodoModal();
   initSortable();
+  initRemindersSortable();
   initTaskSearch();
   
   todoForm.addEventListener('submit', addTodo);
   todoList.addEventListener('click', handleTodoClick);
   todoList.addEventListener('dblclick', handleTodoDoubleClick);
+  initRemindersView();
 }
 
 // Load todos (now uses storage.js which handles Supabase + localStorage)
@@ -51,6 +55,22 @@ async function saveTodos() {
   try {
     await saveTodosToStorage(todos);
   } catch (error) {
+  }
+}
+
+// Load reminders (now uses storage.js which handles Supabase + localStorage)
+async function loadReminders() {
+  reminders = await loadRemindersFromStorage();
+  updateRemindersWarning();
+  renderReminders();
+}
+
+// Save reminders (now uses storage.js which handles Supabase + localStorage)
+async function saveReminders() {
+  try {
+    await saveRemindersToStorage(reminders);
+  } catch (error) {
+    console.error('Error saving reminders:', error);
   }
 }
 
@@ -114,6 +134,44 @@ async function addTodo(e) {
     todoInput.value = '';
     return;
   }
+
+  // @reminder input
+  if (/^@reminder:?\s+/i.test(text)) {
+    const reminderText = text.replace(/^@reminder:?\s+/i, '').trim();
+    if (!reminderText) {
+      await customAlert('Please enter a reminder after @reminder', 'Required');
+      todoInput.value = '';
+      return;
+    }
+    
+    const lowerInput = toLowercaseInput(reminderText);
+    const { cleanText: afterWhoText, who } = parseAssigneeFromText(lowerInput);
+    const { cleanText: afterWhatText, what } = parseSupplierFromText(afterWhoText);
+    const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterWhatText);
+    
+    const priority = parsedPriority || 'low';
+    
+    const newReminder = {
+      id: generateId(),
+      text: cleanText,
+      who: who || null,
+      what: what || null,
+      priority: priority,
+      completed: false,
+      createdAt: new Date().toISOString(),
+      completedAt: null,
+      notes: null,
+      order: reminders.length
+    };
+    
+          reminders.unshift(newReminder);
+      await saveReminders();
+      updateRemindersWarning();
+      renderReminders();
+    
+    todoInput.value = '';
+    return;
+  }
   
   const lowerInput = toLowercaseInput(text);
   const { cleanText: afterWhoText, who } = parseAssigneeFromText(lowerInput);
@@ -153,6 +211,7 @@ function initTaskSearch() {
     searchInput.addEventListener('input', (e) => {
       searchQuery = e.target.value.toLowerCase().trim();
       renderTodos();
+      renderReminders();
     });
   }
 }
@@ -214,6 +273,253 @@ function filterTodos(todosList) {
   });
 }
 
+// -- REMINDERS VIEW LOGIC --
+let remindersMode = false;
+let remindersSortableInstance = null;
+const remindersBtn = document.getElementById('reminders-btn');
+const remindersList = document.getElementById('reminders-list');
+
+function initRemindersView() {
+  if (remindersBtn && remindersList) {
+    remindersBtn.addEventListener('click', () => {
+      remindersMode = !remindersMode;
+      remindersBtn.classList.toggle('active', remindersMode);
+      remindersBtn.title = remindersMode ? 'Hide Reminders' : 'Show Reminders';
+      remindersBtn.setAttribute('aria-label', remindersMode ? 'Hide Reminders' : 'Show Reminders');
+      
+      // Disable reorder mode when viewing reminders
+      if (remindersMode && reorderMode) {
+        toggleReorderMode();
+      }
+      
+      // Disable archive mode when viewing reminders
+      if (remindersMode && archiveMode) {
+        archiveMode = false;
+        archiveBtn.classList.remove('active');
+        archiveBtn.title = 'Show Archived Tasks';
+        archiveBtn.setAttribute('aria-label', 'Show Archived Tasks');
+      }
+      
+      updateRemindersWarning();
+      renderReminders();
+      renderTodos();
+    });
+    
+    // Add click handlers for reminders list
+    remindersList.addEventListener('click', handleReminderClick);
+    remindersList.addEventListener('dblclick', handleReminderDoubleClick);
+  }
+}
+
+function initRemindersSortable() {
+  if (!remindersList) return;
+  
+  remindersSortableInstance = new Sortable(remindersList, {
+    handle: '.todo-drag-handle',
+    animation: 150,
+    ghostClass: 'todo-ghost',
+    dragClass: 'todo-dragging',
+    disabled: true, // Start disabled, enable when reorder mode is activated
+    onEnd: async function(evt) {
+      const reminderItems = Array.from(remindersList.querySelectorAll('.todo-item'));
+      const newOrder = [];
+      
+      reminderItems.forEach((item, index) => {
+        const reminderId = item.dataset.id;
+        const reminder = reminders.find(r => r.id === reminderId);
+        if (reminder) {
+          reminder.order = index;
+          newOrder.push(reminder);
+        }
+      });
+      
+              await saveReminders();
+        updateRemindersWarning();
+      }
+    });
+  }
+
+function updateRemindersWarning() {
+  if (!remindersBtn) return;
+  
+  // Count incomplete reminders
+  const incompleteReminders = reminders.filter(r => !r.completed);
+  const hasReminders = reminders.length > 0;
+  const hasIncompleteReminders = incompleteReminders.length > 0;
+  
+  // Add or remove warning badge
+  if (hasIncompleteReminders) {
+    remindersBtn.classList.add('has-warning');
+    remindersBtn.setAttribute('data-badge', incompleteReminders.length.toString());
+  } else if (hasReminders) {
+    remindersBtn.classList.add('has-reminders');
+    remindersBtn.classList.remove('has-warning');
+    remindersBtn.removeAttribute('data-badge');
+  } else {
+    remindersBtn.classList.remove('has-warning', 'has-reminders');
+    remindersBtn.removeAttribute('data-badge');
+  }
+}
+
+function renderReminders() {
+    if (!remindersList) return;
+    
+    // Update warning indicator
+    updateRemindersWarning();
+    
+    if (remindersMode) {
+      remindersList.style.display = '';
+      todoList.style.display = 'none';
+      archivedList.style.display = 'none';
+      remindersList.innerHTML = '';
+      
+      // Sort by order
+      let sortedReminders = [...reminders].sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Apply search filter if active
+    if (searchQuery) {
+      sortedReminders = sortedReminders.filter(reminder => {
+        const searchText = (
+          reminder.text.toLowerCase() + ' ' +
+          (reminder.who || '').toLowerCase() + ' ' +
+          (reminder.what || '').toLowerCase() + ' ' +
+          (reminder.notes || '').toLowerCase()
+        );
+        return searchText.includes(searchQuery);
+      });
+    }
+    
+    sortedReminders.forEach(reminder => {
+      const li = createReminderElement(reminder);
+      remindersList.appendChild(li);
+    });
+    
+    // Enable/disable sortable based on reorder mode
+    if (remindersSortableInstance) {
+      remindersSortableInstance.option('disabled', !reorderMode);
+    }
+  } else {
+    remindersList.style.display = 'none';
+  }
+}
+
+function createReminderElement(reminder) {
+  const li = document.createElement('li');
+  li.className = `todo-item ${reminder.completed ? 'completed' : ''}`;
+  li.dataset.id = reminder.id;
+  
+  li.innerHTML = `
+    <div class="todo-row">
+      <button class="btn-link edit-btn" title="Edit Reminder">
+        <i class="fa-solid fa-pen"></i>
+      </button>
+      <input 
+        type="checkbox" 
+        class="todo-checkbox" 
+        ${reminder.completed ? 'checked' : ''}
+      >
+      <span class="todo-priority priority-${reminder.priority}" data-priority="${reminder.priority}" title="${getPriorityText(reminder.priority)} (click to change)"></span>
+      <span class="todo-text">${escapeHtml(reminder.text)}</span>
+      <div class="todo-spacer"></div>
+      ${reminder.who || reminder.what ? `<div class="todo-tags">
+        ${reminder.who ? `<span class="todo-assignee" title="Who">@${escapeHtml(reminder.who)}</span>` : ''}
+        ${reminder.what ? `<span class="todo-supplier" title="What">#${escapeHtml(reminder.what)}</span>` : ''}
+      </div>` : ''}
+      <div class="todo-actions">
+        ${reminder.notes ? `<span class="notes-indicator" title="Has notes">
+          <i class="fa-solid fa-note-sticky"></i>
+        </span>` : ''}
+        <div class="todo-drag-handle" title="Drag to reorder">
+          <i class="fa-solid fa-grip-vertical"></i>
+        </div>
+      </div>
+    </div>
+    <div class="todo-notes" style="display: none;">
+      ${reminder.notes ? `<div class="notes-content">${escapeHtml(reminder.notes)}</div>` : ''}
+      <button class="btn-link edit-note-btn" title="${reminder.notes ? 'Edit note' : 'Add note'}">
+        <i class="fa-solid fa-pen"></i>
+      </button>
+    </div>
+  `;
+  
+  return li;
+}
+
+async function handleReminderClick(e) {
+  const reminderItem = e.target.closest('.todo-item');
+  if (!reminderItem) return;
+  
+  const reminderId = reminderItem.dataset.id;
+  const reminder = reminders.find(r => r.id === reminderId);
+  
+      if (e.target.classList.contains('todo-checkbox')) {
+      reminder.completed = !reminder.completed;
+      reminder.completedAt = reminder.completed ? new Date().toISOString() : null;
+      await saveReminders();
+      updateRemindersWarning();
+      renderReminders();
+  } else if (e.target.closest('.edit-note-btn')) {
+    await openNotesModal(reminder, true);
+  } else if (e.target.closest('.edit-btn')) {
+    await editReminder(reminder);
+  } else if (e.target.closest('.todo-priority')) {
+    await changeReminderPriority(reminder);
+  }
+}
+
+function handleReminderDoubleClick(e) {
+  if (e.target.closest('button') || e.target.closest('input') || e.target.closest('a')) {
+    return;
+  }
+  
+  const reminderItem = e.target.closest('.todo-item');
+  if (!reminderItem) return;
+  
+  const reminderId = reminderItem.dataset.id;
+  const reminder = reminders.find(r => r.id === reminderId);
+  
+  if (!reminder) return;
+  
+  if (!reminder.notes) {
+    openNotesModal(reminder, true);
+  } else {
+    toggleNotes(reminderItem);
+  }
+}
+
+async function editReminder(reminder) {
+  currentEditingTodoForEdit = reminder;
+  isEditingReminderForEdit = true;
+  
+  const currentText = reminder.text + 
+    (reminder.who ? ` @${reminder.who}` : '') + 
+    (reminder.what ? ` #${reminder.what}` : '') + 
+    (reminder.priority === 'high' ? ' !' : '');
+  
+  const modal = document.getElementById('edit-todo-modal');
+  const textarea = document.getElementById('edit-todo-textarea');
+  const title = document.querySelector('#edit-todo-modal .notes-modal-title');
+  
+  if (title) title.textContent = 'Edit Reminder';
+  textarea.value = currentText;
+  modal.style.display = 'flex';
+  
+  setTimeout(() => {
+    textarea.focus();
+    textarea.select();
+  }, 100);
+}
+
+async function changeReminderPriority(reminder) {
+  const priorities = ['low', 'medium', 'high'];
+  const currentIndex = priorities.indexOf(reminder.priority);
+      const nextIndex = (currentIndex + 1) % priorities.length;
+    reminder.priority = priorities[nextIndex];
+    await saveReminders();
+    updateRemindersWarning();
+    renderReminders();
+}
+
 // -- ARCHIVE VIEW LOGIC --
 let archiveMode = false;
 const archiveBtn = document.getElementById('archive-btn');
@@ -229,6 +535,14 @@ if (archiveBtn && archivedList) {
     // Disable reorder mode when viewing archive
     if (archiveMode && reorderMode) {
       toggleReorderMode();
+    }
+    
+    // Disable reminders mode when viewing archive
+    if (archiveMode && remindersMode) {
+      remindersMode = false;
+      remindersBtn.classList.remove('active');
+      remindersBtn.title = 'Show Reminders';
+      remindersBtn.setAttribute('aria-label', 'Show Reminders');
     }
     
     renderTodos();
@@ -268,15 +582,27 @@ function renderTodos() {
   if (archiveMode) {
     archivedList.style.display = '';
     todoList.style.display = 'none';
+    remindersList.style.display = 'none';
     archivedList.innerHTML = '';
     let archived = todos.filter(t => t.archived);
     archived = filterTodos(archived);
+    // Sort by completedAt date, most recent first
+    archived.sort((a, b) => {
+      const dateA = a.completedAt ? new Date(a.completedAt).getTime() : 0;
+      const dateB = b.completedAt ? new Date(b.completedAt).getTime() : 0;
+      return dateB - dateA; // Descending order (newest first)
+    });
     archived.forEach(todo => {
       const li = createArchivedTodoElement(todo);
       archivedList.appendChild(li);
     });
+  } else if (remindersMode) {
+    // Reminders view is handled in renderReminders()
+    archivedList.style.display = 'none';
+    todoList.style.display = 'none';
   } else {
     archivedList.style.display = 'none';
+    remindersList.style.display = 'none';
     todoList.style.display = '';
     todoList.innerHTML = '';
     
@@ -349,20 +675,17 @@ function createTodoElement(todo) {
 
 function createArchivedTodoElement(todo) {
   const li = document.createElement('li');
-  li.className = 'todo-item completed';
+  li.className = 'todo-item archived';
   li.dataset.id = todo.id;
-  const completedAt = todo.completedAt ? (new Date(todo.completedAt)).toLocaleString() : '';
+  const completedAt = todo.completedAt ? (new Date(todo.completedAt)).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+  const tagsHtml = (todo.who || todo.what) 
+    ? `<span class="archived-tags">${todo.who ? `<span class="todo-assignee">@${escapeHtml(todo.who)}</span>` : ''}${todo.what ? `<span class="todo-supplier">#${escapeHtml(todo.what)}</span>` : ''}</span>` 
+    : '';
   li.innerHTML = `
-    <div class="todo-content">
-      <input type="checkbox" class="todo-checkbox" checked disabled>
-      <div class="todo-main">
-        <div class="todo-text-line">
-          <span class="todo-priority priority-${todo.priority}" data-priority="${todo.priority}"></span>
-          <span class="todo-text">${escapeHtml(todo.text)}</span>
-        </div>
-        ${(todo.who || todo.what) ? `<div class="todo-tags">${todo.who ? `<span class="todo-assignee">@${escapeHtml(todo.who)}</span>` : ''}${todo.what ? `<span class="todo-supplier">#${escapeHtml(todo.what)}</span>` : ''}</div>` : ''}
-        <div class="todo-completed-at">Completed: ${completedAt}</div>
-      </div>
+    <div class="archived-row">
+      <span class="archived-text">${escapeHtml(todo.text)}</span>
+      ${tagsHtml}
+      <span class="archived-date">${completedAt}</span>
     </div>`;
   return li;
 }
@@ -407,6 +730,7 @@ async function handleTodoClick(e) {
 async function editTodo(todo) {
   // Store the todo ID for the modal
   currentEditingTodoForEdit = todo;
+  isEditingReminderForEdit = false;
   
   const currentText = todo.text + 
     (todo.who ? ` @${todo.who}` : '') + 
@@ -416,7 +740,9 @@ async function editTodo(todo) {
   // Open edit modal
   const modal = document.getElementById('edit-todo-modal');
   const textarea = document.getElementById('edit-todo-textarea');
+  const title = document.querySelector('#edit-todo-modal .notes-modal-title');
   
+  if (title) title.textContent = 'Edit Task';
   textarea.value = currentText;
   modal.style.display = 'flex';
   
@@ -463,11 +789,13 @@ function handleTodoDoubleClick(e) {
 
 // Edit todo modal management
 let currentEditingTodoForEdit = null;
+let isEditingReminderForEdit = false;
 
 function closeEditTodoModal() {
   const modal = document.getElementById('edit-todo-modal');
   modal.style.display = 'none';
   currentEditingTodoForEdit = null;
+  isEditingReminderForEdit = false;
 }
 
 async function saveEditedTodo() {
@@ -486,8 +814,14 @@ async function saveEditedTodo() {
     currentEditingTodoForEdit.what = what || null;
     currentEditingTodoForEdit.priority = parsedPriority || currentEditingTodoForEdit.priority;
     
-    await saveTodos();
-    renderTodos();
+          if (isEditingReminderForEdit) {
+        await saveReminders();
+        updateRemindersWarning();
+        renderReminders();
+    } else {
+      await saveTodos();
+      renderTodos();
+    }
   }
   
   closeEditTodoModal();
@@ -496,11 +830,23 @@ async function saveEditedTodo() {
 async function deleteFromEditModal() {
   if (!currentEditingTodoForEdit) return;
   
-  const confirmed = await customConfirm('Are you sure you want to delete this todo?', 'Delete Todo');
+  const title = isEditingReminderForEdit ? 'Delete Reminder' : 'Delete Todo';
+  const message = isEditingReminderForEdit 
+    ? 'Are you sure you want to delete this reminder?' 
+    : 'Are you sure you want to delete this todo?';
+  
+  const confirmed = await customConfirm(message, title);
   if (confirmed) {
-    todos = todos.filter(t => t.id !== currentEditingTodoForEdit.id);
-    await saveTodos();
-    renderTodos();
+          if (isEditingReminderForEdit) {
+        reminders = reminders.filter(r => r.id !== currentEditingTodoForEdit.id);
+        await saveReminders();
+        updateRemindersWarning();
+        renderReminders();
+    } else {
+      todos = todos.filter(t => t.id !== currentEditingTodoForEdit.id);
+      await saveTodos();
+      renderTodos();
+    }
     closeEditTodoModal();
   }
 }
@@ -522,7 +868,13 @@ function initEditTodoModal() {
   }
   
   if (saveBtn) {
-    saveBtn.addEventListener('click', saveEditedTodo);
+    saveBtn.addEventListener('click', () => {
+      if (isEditingReminderForEdit) {
+        saveEditedReminder();
+      } else {
+        saveEditedTodo();
+      }
+    });
   }
   
   if (deleteBtn) {
@@ -543,21 +895,51 @@ function initEditTodoModal() {
     textarea.addEventListener('keydown', (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
-        saveEditedTodo();
+        if (isEditingReminderForEdit) {
+          saveEditedReminder();
+        } else {
+          saveEditedTodo();
+        }
       }
     });
   }
 }
 
+async function saveEditedReminder() {
+  if (!currentEditingTodoForEdit) return;
+  
+  const textarea = document.getElementById('edit-todo-textarea');
+  const newText = textarea.value.trim();
+  
+  if (newText) {
+    const { cleanText: afterWhoText, who } = parseAssigneeFromText(newText);
+    const { cleanText: afterWhatText, what } = parseSupplierFromText(afterWhoText);
+    const { cleanText, priority: parsedPriority } = parsePriorityFromText(afterWhatText);
+    
+    currentEditingTodoForEdit.text = cleanText;
+          currentEditingTodoForEdit.who = who || null;
+      currentEditingTodoForEdit.what = what || null;
+      currentEditingTodoForEdit.priority = parsedPriority || currentEditingTodoForEdit.priority;
+      
+      await saveReminders();
+      updateRemindersWarning();
+      renderReminders();
+  }
+  
+  closeEditTodoModal();
+}
+
 // Notes modal management
 let currentEditingTodo = null;
+let isEditingReminder = false;
 
-function openNotesModal(todo) {
-  currentEditingTodo = todo;
+function openNotesModal(item, isReminder = false) {
+  currentEditingTodo = item;
+  isEditingReminder = isReminder;
   const modal = document.getElementById('notes-modal');
   const textarea = document.getElementById('notes-textarea');
   
-  textarea.value = todo.notes || '';
+  textarea.value = item.notes || '';
   modal.style.display = 'flex';
   
   // Focus textarea after a brief delay to ensure modal is visible
@@ -570,6 +952,7 @@ function closeNotesModal() {
   const modal = document.getElementById('notes-modal');
   modal.style.display = 'none';
   currentEditingTodo = null;
+  isEditingReminder = false;
 }
 
 async function saveNotesFromModal() {
@@ -578,9 +961,16 @@ async function saveNotesFromModal() {
   const textarea = document.getElementById('notes-textarea');
   const newNotes = textarea.value.trim();
   
-  currentEditingTodo.notes = newNotes || null;
-  await saveTodos();
-  renderTodos();
+      currentEditingTodo.notes = newNotes || null;
+    
+    if (isEditingReminder) {
+      await saveReminders();
+      updateRemindersWarning();
+      renderReminders();
+  } else {
+    await saveTodos();
+    renderTodos();
+  }
   closeNotesModal();
 }
 
@@ -589,9 +979,16 @@ async function deleteNotesFromModal() {
   
   const confirmed = await customConfirm('Delete these notes?', 'Delete Notes');
   if (confirmed) {
-    currentEditingTodo.notes = null;
-    await saveTodos();
-    renderTodos();
+          currentEditingTodo.notes = null;
+      
+      if (isEditingReminder) {
+        await saveReminders();
+        updateRemindersWarning();
+        renderReminders();
+    } else {
+      await saveTodos();
+      renderTodos();
+    }
     closeNotesModal();
   }
 }
@@ -1081,39 +1478,146 @@ async function loadHabits() {
   return habits || {};
 }
 
-async function initHabitsTracker() {
-  const habits = await loadHabits();
-  const habitIcons = document.querySelectorAll('.habit-icon');
-  
-  habitIcons.forEach(icon => {
-    const habitName = icon.dataset.habit;
-    if (habits[habitName]) {
-      icon.classList.add('completed');
-    } else {
-      icon.classList.remove('completed');
+function shouldHabitReset(habitName, habitData) {
+    if (!habitData || !habitData.completed) {
+      return false;
     }
     
-    icon.addEventListener('click', () => toggleHabit(habitName));
-  });
+    // Get reset interval - use stored value or default for this habit type
+    let resetIntervalHours;
+    if (habitData.reset_interval_hours !== undefined && habitData.reset_interval_hours !== null) {
+      resetIntervalHours = habitData.reset_interval_hours;
+    } else {
+      // Fallback to default based on habit name
+      if (typeof getHabitResetInterval === 'function') {
+        resetIntervalHours = getHabitResetInterval(habitName);
+      } else {
+        const hourlyHabits = ['water', 'walk', 'exercise'];
+        resetIntervalHours = hourlyHabits.includes(habitName) ? 1 : 24;
+      }
+    }
+    
+    // If completed but no timestamp, treat as needing reset (old data)
+    if (!habitData.last_completed_at) {
+      return true;
+    }
+    
+    const lastCompleted = new Date(habitData.last_completed_at);
+    const now = new Date();
+    const hoursSinceCompletion = (now - lastCompleted) / (1000 * 60 * 60);
+    
+    return hoursSinceCompletion >= resetIntervalHours;
+  }
+
+function isHabitNeedingAttention(habitName, habitData) {
+  // If habit is not completed, it needs attention
+  if (!habitData || !habitData.completed) {
+    return true;
+  }
+  
+  // If habit should reset but hasn't, it needs attention
+  return shouldHabitReset(habitName, habitData);
+}
+
+async function initHabitsTracker() {
+  await updateHabitsDisplay();
+  
+  // Update display every minute for hourly resets
+  setInterval(() => {
+    updateHabitsDisplay();
+  }, 60000); // 60 seconds = 1 minute
   
   scheduleMidnightReset();
 }
 
-async function toggleHabit(habitName) {
-  const today = getTodayDateString();
-  const currentHabits = await loadHabits();
-  
-  const newState = !currentHabits[habitName];
-  
-  await saveHabitLogForDate(today, habitName, newState);
-  
-  const icon = document.querySelector(`.habit-icon[data-habit="${habitName}"]`);
-  if (icon) {
-    if (newState) {
-      icon.classList.add('completed');
-    } else {
-      icon.classList.remove('completed');
+async function updateHabitsDisplay() {
+    try {
+      const habits = await loadHabits();
+      const habitIcons = document.querySelectorAll('.habit-icon');
+      
+      habitIcons.forEach(icon => {
+        const habitName = icon.dataset.habit;
+        if (!habitName) return;
+        
+        const habitData = habits[habitName];
+        
+        // Remove all state classes
+        icon.classList.remove('completed', 'needs-attention');
+        
+        // Debug logging
+        if (habitData) {
+          console.log(`Habit ${habitName}:`, {
+            completed: habitData.completed,
+            last_completed_at: habitData.last_completed_at,
+            reset_interval_hours: habitData.reset_interval_hours,
+            shouldReset: shouldHabitReset(habitName, habitData),
+            needsAttention: isHabitNeedingAttention(habitName, habitData)
+          });
+        }
+        
+        // Show as completed only if it's completed AND not reset yet
+        if (habitData && habitData.completed === true && !shouldHabitReset(habitName, habitData)) {
+          icon.classList.add('completed');
+        } else {
+          // Show as needing attention if not completed or if it needs reset
+          if (isHabitNeedingAttention(habitName, habitData)) {
+            icon.classList.add('needs-attention');
+          }
+        }
+        
+        // Ensure click handler is only added once
+        if (!icon.dataset.listenerAttached) {
+          icon.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Habit icon clicked:', habitName);
+            toggleHabit(habitName);
+          });
+          icon.dataset.listenerAttached = 'true';
+        }
+      });
+    } catch (error) {
+      console.error('Error updating habits display:', error);
     }
+  }
+
+async function toggleHabit(habitName) {
+  try {
+    const today = getTodayDateString();
+    const currentHabits = await loadHabits();
+    
+    // Get the reset interval for this habit (synchronous function)
+    // Check if function exists in global scope (from storage.js)
+    let resetInterval;
+    if (typeof getHabitResetInterval === 'function') {
+      resetInterval = getHabitResetInterval(habitName);
+    } else {
+      // Fallback: define hourly habits inline
+      const hourlyHabits = ['water', 'walk', 'exercise'];
+      resetInterval = hourlyHabits.includes(habitName) ? 1 : 24;
+    }
+    
+    // If habit is completed but should reset, treat as incomplete
+    const habitData = currentHabits[habitName];
+    let currentState = false;
+    if (habitData && habitData.completed) {
+      if (shouldHabitReset(habitName, habitData)) {
+        currentState = false; // Needs reset
+      } else {
+        currentState = true; // Still valid
+      }
+    }
+    
+    const newState = !currentState;
+    
+    console.log('Toggling habit:', habitName, 'from', currentState, 'to', newState, 'interval:', resetInterval);
+    
+    await saveHabitLogForDate(today, habitName, newState, resetInterval);
+    
+    // Update display
+    await updateHabitsDisplay();
+  } catch (error) {
+    console.error('Error toggling habit:', habitName, error);
   }
 }
 
@@ -1124,19 +1628,7 @@ function scheduleMidnightReset() {
   const msUntilMidnight = midnight - now;
   
   setTimeout(async () => {
-    const today = getTodayDateString();
-    
-    const habits = await loadHabits();
-    
-    document.querySelectorAll('.habit-icon').forEach(icon => {
-      const habitName = icon.dataset.habit;
-      if (habits[habitName]) {
-        icon.classList.add('completed');
-      } else {
-        icon.classList.remove('completed');
-      }
-    });
-    
+    await updateHabitsDisplay();
     scheduleMidnightReset();
   }, msUntilMidnight);
 }
