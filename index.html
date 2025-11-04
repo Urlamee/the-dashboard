@@ -266,6 +266,26 @@
       <ul id="reminders-list" class="todos" style="display:none;"></ul>
       <ul id="archived-list" class="todos" style="display:none;"></ul>
 
+      <!-- Modules Section -->
+      <div class="modules-section">
+        <div class="modules-header">
+          <h2 class="modules-title">Modules</h2>
+          <div class="modules-search-container">
+            <i class="fa-solid fa-search modules-search-icon"></i>
+            <input 
+              type="text" 
+              id="modules-search" 
+              class="modules-search-input" 
+              placeholder="Filter modules..."
+              autocomplete="off"
+            />
+          </div>
+        </div>
+        <div id="modules-grid" class="modules-grid">
+          <!-- Modules will be dynamically added here -->
+        </div>
+      </div>
+
       </div>
     </div>
 
@@ -279,7 +299,7 @@
             </div>
           </div>
           <div class="version-container">
-            <span class="version-number" id="version-number">v2.0-dev</span>
+            <span class="version-number" id="version-number">v3.0-dev</span>
             <div class="version-tooltip" id="version-tooltip">
               <p id="version-hash-text"></p>
             </div>

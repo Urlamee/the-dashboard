@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+      integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="../../theme.css" />
+    <link rel="stylesheet" href="../../style.css" />
+    <title>Scripts Module</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .module-container {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        padding: 40px;
+        max-width: 800px;
+        width: 100%;
+        box-shadow: var(--shadow-md);
+        animation: fadeIn 0.5s ease;
+      }
+
+      .module-header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .module-icon {
+        font-size: 48px;
+        color: var(--color-primary);
+        margin-bottom: 16px;
+      }
+
+      .module-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--color-text);
+        margin-bottom: 8px;
+        letter-spacing: -0.02em;
+      }
+
+      .module-subtitle {
+        font-size: 14px;
+        color: var(--color-text-muted);
+      }
+
+      .scripts-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .script-item {
+        background: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        padding: 16px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+
+      .script-item:hover {
+        border-color: var(--color-primary);
+        transform: translateX(4px);
+        box-shadow: var(--shadow-sm);
+      }
+
+      .script-item-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+      }
+
+      .script-name {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .script-icon {
+        color: var(--color-primary);
+        font-size: 18px;
+      }
+
+      .script-arrow {
+        color: var(--color-text-muted);
+        font-size: 14px;
+        transition: transform 0.2s ease;
+      }
+
+      .script-item:hover .script-arrow {
+        transform: translateX(4px);
+      }
+
+      .script-description {
+        font-size: 13px;
+        color: var(--color-text-muted);
+        line-height: 1.5;
+        margin-left: 28px;
+      }
+
+      .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--gradient-button);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        box-shadow: var(--shadow-sm);
+        margin-top: 32px;
+      }
+
+      .back-btn:hover {
+        background: var(--gradient-button-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .back-btn:active {
+        transform: translateY(0);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .module-container {
+          padding: 24px;
+        }
+
+        .module-title {
+          font-size: 24px;
+        }
+
+        .module-icon {
+          font-size: 40px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="module-container">
+      <div class="module-header">
+        <div class="module-icon">
+          <i class="fa-solid fa-code"></i>
+        </div>
+        <h1 class="module-title">Scripts</h1>
+        <p class="module-subtitle">Quick access to your scripts and tools</p>
+      </div>
+
+      <div id="scripts-list" class="scripts-list">
+        <!-- Scripts will be dynamically added here -->
+      </div>
+
+      <a href="../../index.html" class="back-btn">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Dashboard
+      </a>
+    </div>
+
+    <script>
+      // Supabase configuration (same as main dashboard)
+      const SUPABASE_CONFIG = {
+        url: 'https://vdrzaluohnjhucdccwin.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcnphbHVvaG5qaHVjZGNjd2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MTExMjQsImV4cCI6MjA3NzE4NzEyNH0.tudrEVEKh2BG-ajvjOoYxir9AwMN2U2VsBAtdV826PQ',
+        enabled: true
+      };
+
+      let scripts = [];
+      let isLoading = false;
+
+      // Escape HTML to prevent XSS
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Fetch scripts from Supabase
+      async function fetchScriptsFromSupabase() {
+        if (!SUPABASE_CONFIG.enabled || !SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
+          console.warn('Supabase not configured');
+          return [];
+        }
+
+        try {
+          const url = `${SUPABASE_CONFIG.url}/rest/v1/scripts?order=created_at.desc`;
+          const response = await fetch(url, {
+            headers: {
+              'apikey': SUPABASE_CONFIG.anonKey,
+              'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            return data.map(script => ({
+              id: script.id,
+              name: script.name || '',
+              link: script.link || '',
+              description: script.description || '',
+              icon: script.icon || 'fa-solid fa-terminal'
+            }));
+          } else {
+            console.error('Error fetching scripts:', response.status, await response.text());
+            return [];
+          }
+        } catch (error) {
+          console.error('Error fetching scripts from Supabase:', error);
+          return [];
+        }
+      }
+
+      // Render scripts
+      function renderScripts() {
+        const scriptsList = document.getElementById('scripts-list');
+        if (!scriptsList) return;
+
+        if (isLoading) {
+          scriptsList.innerHTML = '<p style="text-align: center; color: var(--color-text-muted); padding: 20px;">Loading scripts...</p>';
+          return;
+        }
+
+        if (scripts.length === 0) {
+          scriptsList.innerHTML = '<p style="text-align: center; color: var(--color-text-muted); padding: 20px;">No scripts found. Add scripts to your database.</p>';
+          return;
+        }
+
+        scriptsList.innerHTML = scripts.map(script => `
+          <a href="${escapeHtml(script.link)}" target="_blank" class="script-item">
+            <div class="script-item-header">
+              <div class="script-name">
+                <i class="${escapeHtml(script.icon)} script-icon"></i>
+                ${escapeHtml(script.name)}
+              </div>
+              <i class="fa-solid fa-arrow-right script-arrow"></i>
+            </div>
+            <div class="script-description">${escapeHtml(script.description || 'No description')}</div>
+          </a>
+        `).join('');
+      }
+
+      // Load and render scripts
+      async function loadScripts() {
+        isLoading = true;
+        renderScripts();
+        
+        scripts = await fetchScriptsFromSupabase();
+        
+        isLoading = false;
+        renderScripts();
+      }
+
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', loadScripts);
+    </script>
+  </body>
+</html>
+

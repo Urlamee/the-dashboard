@@ -37,6 +37,7 @@ async function init() {
   initSortable();
   initRemindersSortable();
   initTaskSearch();
+  initModules();
   
   todoForm.addEventListener('submit', addTodo);
   todoList.addEventListener('click', handleTodoClick);
@@ -1341,12 +1342,12 @@ function updateVersionDisplay() {
   if (!versionEl) return;
   
   if (gitInfo.commitCount > 0) {
-    versionEl.textContent = `v2.${gitInfo.commitCount}-${gitInfo.commitHash}`;
+    versionEl.textContent = `v3.${gitInfo.commitCount}-${gitInfo.commitHash}`;
     if (versionHashEl && gitInfo.commitMessage) {
       versionHashEl.textContent = gitInfo.commitMessage;
     }
   } else {
-    versionEl.textContent = 'v2.0-dev';
+    versionEl.textContent = 'v3.0-dev';
     if (versionHashEl) {
       versionHashEl.textContent = 'Development version';
     }
@@ -1699,6 +1700,117 @@ async function addLogToSupabase(logText) {
   } catch(e) {
     return { ok: false, status: 0, error: e?.message || String(e) };
   }
+}
+
+// -- MODULES LOGIC --
+let modules = [];
+let modulesSearchQuery = '';
+
+// Initialize modules system
+function initModules() {
+  loadModules();
+  initModulesSearch();
+  renderModules();
+}
+
+// Load modules list (currently from a static list, can be extended to load from storage/API)
+function loadModules() {
+  modules = [
+    {
+      id: 'hello-world',
+      name: 'Hello World',
+      folder: 'modules/hello-world',
+      icon: 'fa-solid fa-code',
+      description: 'A simple hello world module example'
+    },
+    {
+      id: 'scripts',
+      name: 'Scripts',
+      folder: 'modules/scripts',
+      icon: 'fa-solid fa-terminal',
+      description: 'Quick access to scripts and tools'
+    }
+  ];
+}
+
+// Initialize modules search
+function initModulesSearch() {
+  const searchInput = document.getElementById('modules-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      modulesSearchQuery = e.target.value.toLowerCase().trim();
+      renderModules();
+    });
+  }
+}
+
+// Filter modules based on search query
+function filterModules() {
+  if (!modulesSearchQuery) return modules;
+  
+  return modules.filter(module => {
+    return module.name.toLowerCase().includes(modulesSearchQuery) ||
+           (module.description && module.description.toLowerCase().includes(modulesSearchQuery));
+  });
+}
+
+// Render modules grid
+function renderModules() {
+  const modulesGrid = document.getElementById('modules-grid');
+  if (!modulesGrid) return;
+  
+  const filteredModules = filterModules();
+  modulesGrid.innerHTML = '';
+  
+  if (filteredModules.length === 0) {
+    modulesGrid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 20px;">No modules found</div>';
+    return;
+  }
+  
+  filteredModules.forEach(module => {
+    const moduleBox = createModuleElement(module);
+    modulesGrid.appendChild(moduleBox);
+  });
+}
+
+// Create module box element
+function createModuleElement(module) {
+  const div = document.createElement('div');
+  div.className = 'module-box';
+  div.dataset.moduleId = module.id;
+  
+  div.innerHTML = `
+    <i class="${module.icon || 'fa-solid fa-folder'} module-icon"></i>
+    <div class="module-name">${escapeHtml(module.name)}</div>
+    <button class="module-open-btn" data-module-id="${module.id}">
+      Open
+    </button>
+  `;
+  
+  // Add click handler to open module
+  const openBtn = div.querySelector('.module-open-btn');
+  openBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openModule(module);
+  });
+  
+  // Also allow clicking the box itself to open
+  div.addEventListener('click', (e) => {
+    if (e.target !== openBtn && !openBtn.contains(e.target)) {
+      openModule(module);
+    }
+  });
+  
+  return div;
+}
+
+// Open a module
+function openModule(module) {
+  // Check if module folder exists
+  const modulePath = `${module.folder}/index.html`;
+  
+  // Try to open the module in a new window/tab
+  window.open(modulePath, '_blank');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
