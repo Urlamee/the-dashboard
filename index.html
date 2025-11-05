@@ -246,7 +246,12 @@
           />
         </div>
         <div class="task-right-controls">
-          <span class="task-stats" id="task-stats" title="a=active · d=done today · l=logs today · q=quotes today">0a · 0d · 0l · 0q</span>
+          <span class="task-stats" id="task-stats" title="a=active d=done today l=logs today q=quotes today">
+            <span class="stat-active">0a</span>
+            <span class="stat-done">0d</span>
+            <span class="stat-logs">0l</span>
+            <span class="stat-quotes">0q</span>
+          </span>
           <div class="task-control-buttons">
             <button id="reminders-btn" class="task-control-btn" type="button" title="Show Reminders" aria-label="Show Reminders">
               <i class="fa-solid fa-clock"></i>
@@ -265,6 +270,40 @@
       </ul>
       <ul id="reminders-list" class="todos" style="display:none;"></ul>
       <ul id="archived-list" class="todos" style="display:none;"></ul>
+
+      <!-- Filter and Pagination Controls -->
+      <div class="todo-controls-bottom">
+        <!-- Priority Filters -->
+        <div class="priority-filters">
+          <button id="priority-filter-all" class="priority-filter-btn active" type="button" title="Show all priorities">
+            <span class="priority-filter-bubble priority-filter-all"></span>
+            <span class="priority-filter-label">All</span>
+          </button>
+          <button id="priority-filter-high" class="priority-filter-btn" type="button" title="Show high priority only">
+            <span class="priority-filter-bubble priority-high"></span>
+            <span class="priority-filter-label">High</span>
+          </button>
+          <button id="priority-filter-medium" class="priority-filter-btn" type="button" title="Show medium priority only">
+            <span class="priority-filter-bubble priority-medium"></span>
+            <span class="priority-filter-label">Medium</span>
+          </button>
+          <button id="priority-filter-low" class="priority-filter-btn" type="button" title="Show low priority only">
+            <span class="priority-filter-bubble priority-low"></span>
+            <span class="priority-filter-label">Low</span>
+          </button>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div id="pagination-container" class="pagination-container" style="display: none;">
+          <button id="pagination-prev" class="pagination-btn" type="button" title="Previous page">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          <span id="pagination-info" class="pagination-info"></span>
+          <button id="pagination-next" class="pagination-btn" type="button" title="Next page">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
 
       <!-- Modules Section -->
       <div class="modules-section">

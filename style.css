@@ -1848,9 +1848,43 @@ body.reorder-mode .edit-btn {
   font-size: 11px;
   color: #64748b;
   white-space: nowrap;
-  font-weight: 500;
+  font-weight: 600;
   font-family: 'Courier New', monospace;
   letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+.task-stats span {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.task-stats .stat-active {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.task-stats .stat-done {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.task-stats .stat-logs {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.task-stats .stat-quotes {
+  background: #f3e8ff;
+  color: #6b21a8;
 }
 
 /* Task Control Buttons Group */
@@ -1915,6 +1949,140 @@ body.reorder-mode .edit-btn {
 
 .task-control-btn i {
   font-size: 12px;
+}
+
+/* Filter and Pagination Container */
+.todo-controls-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  margin-top: 8px;
+  border-top: 1px solid #e2e8f0;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Priority Filters */
+.priority-filters {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.priority-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  background: transparent;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.priority-filter-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #475569;
+}
+
+.priority-filter-btn.active {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #334155;
+  font-weight: 600;
+}
+
+.priority-filter-bubble {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.priority-filter-bubble.priority-high {
+  background-color: var(--priority-high);
+}
+
+.priority-filter-bubble.priority-medium {
+  background-color: var(--priority-medium);
+}
+
+.priority-filter-bubble.priority-low {
+  background-color: var(--priority-low);
+}
+
+.priority-filter-bubble.priority-filter-all {
+  background: conic-gradient(
+    var(--priority-high) 0deg 120deg,
+    var(--priority-medium) 120deg 240deg,
+    var(--priority-low) 240deg 360deg
+  );
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.priority-filter-label {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* Pagination Controls */
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.pagination-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
+.pagination-btn:hover:not(.disabled) {
+  background: #f8fafc;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.pagination-btn.disabled,
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.pagination-info {
+  font-size: 10px;
+  color: #64748b;
+  font-weight: 500;
+  min-width: 60px;
+  text-align: center;
+  white-space: nowrap;
 }
 
   /* Active state for reminders button */
@@ -2126,6 +2294,17 @@ body.reorder-mode .edit-btn {
   border-top: 1px solid var(--color-border);
 }
 
+.modules-grid {
+  display: none; /* Hidden by default, shown only when searching */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.modules-grid.visible {
+  display: grid;
+}
+
 .modules-header {
   display: flex;
   justify-content: space-between;
@@ -2175,13 +2354,6 @@ body.reorder-mode .edit-btn {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-}
-
-.modules-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 16px;
-  margin-top: 16px;
 }
 
 .module-box {

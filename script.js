@@ -9,6 +9,10 @@ let reminders = [];
 let dailyAdvice = [];
 let quotesData = []; // Store full quote objects for stats
 
+// Pagination state
+let currentPage = 1;
+const ITEMS_PER_PAGE = 5;
+
 const GIT_CONFIG = {
   owner: 'Urlamee',
   repo: 'the-dashboard',
@@ -38,6 +42,8 @@ async function init() {
   initRemindersSortable();
   initTaskSearch();
   initModules();
+  initPagination();
+  initPriorityFilters();
   
   todoForm.addEventListener('submit', addTodo);
   todoList.addEventListener('click', handleTodoClick);
@@ -48,6 +54,7 @@ async function init() {
 // Load todos (now uses storage.js which handles Supabase + localStorage)
 async function loadTodos() {
   todos = await loadTodosFromStorage();
+  updatePriorityFilters(); // Update counts when todos are loaded
   renderTodos();
 }
 
@@ -196,7 +203,9 @@ async function addTodo(e) {
   };
   
   todos.unshift(newTodo);
+  currentPage = 1; // Reset to first page when adding new todo
   await saveTodos();
+  updatePriorityFilters(); // Update counts when adding todo
   renderTodos();
   
   todoInput.value = '';
@@ -205,15 +214,128 @@ async function addTodo(e) {
 
 // -- SEARCH/FILTER LOGIC --
 let searchQuery = '';
+let selectedPriority = null; // null = all, 'high' = high only, 'medium' = medium only, 'low' = low only
 
 function initTaskSearch() {
   const searchInput = document.getElementById('task-search');
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       searchQuery = e.target.value.toLowerCase().trim();
+      currentPage = 1; // Reset to first page when search changes
+      updatePriorityFilters(); // Update counts when search changes
       renderTodos();
       renderReminders();
     });
+  }
+}
+
+function initPriorityFilters() {
+  const highBtn = document.getElementById('priority-filter-high');
+  const mediumBtn = document.getElementById('priority-filter-medium');
+  const lowBtn = document.getElementById('priority-filter-low');
+  const allBtn = document.getElementById('priority-filter-all');
+  
+  if (highBtn) {
+    highBtn.addEventListener('click', () => {
+      selectedPriority = selectedPriority === 'high' ? null : 'high';
+      currentPage = 1;
+      updatePriorityFilters();
+      renderTodos();
+    });
+  }
+  
+  if (mediumBtn) {
+    mediumBtn.addEventListener('click', () => {
+      selectedPriority = selectedPriority === 'medium' ? null : 'medium';
+      currentPage = 1;
+      updatePriorityFilters();
+      renderTodos();
+    });
+  }
+  
+  if (lowBtn) {
+    lowBtn.addEventListener('click', () => {
+      selectedPriority = selectedPriority === 'low' ? null : 'low';
+      currentPage = 1;
+      updatePriorityFilters();
+      renderTodos();
+    });
+  }
+  
+  if (allBtn) {
+    allBtn.addEventListener('click', () => {
+      selectedPriority = null;
+      currentPage = 1;
+      updatePriorityFilters();
+      renderTodos();
+    });
+  }
+  
+  // Initialize with "all" active
+  updatePriorityFilters();
+}
+
+function getPriorityCounts() {
+  // Get all non-archived todos
+  let visibleTodos = todos.filter(t => !t.archived);
+  
+  // Apply search filter if active
+  if (searchQuery) {
+    visibleTodos = visibleTodos.filter(todo => {
+      const searchText = (
+        todo.text.toLowerCase() + ' ' +
+        (todo.who || '').toLowerCase() + ' ' +
+        (todo.what || '').toLowerCase() + ' ' +
+        (todo.notes || '').toLowerCase()
+      );
+      return searchText.includes(searchQuery);
+    });
+  }
+  
+  // Count by priority
+  const counts = {
+    high: visibleTodos.filter(t => t.priority === 'high').length,
+    medium: visibleTodos.filter(t => t.priority === 'medium').length,
+    low: visibleTodos.filter(t => t.priority === 'low').length,
+    all: visibleTodos.length
+  };
+  
+  return counts;
+}
+
+function updatePriorityFilters() {
+  const highBtn = document.getElementById('priority-filter-high');
+  const mediumBtn = document.getElementById('priority-filter-medium');
+  const lowBtn = document.getElementById('priority-filter-low');
+  const allBtn = document.getElementById('priority-filter-all');
+  
+  // Get priority counts
+  const counts = getPriorityCounts();
+  
+  // Update labels with counts
+  const highLabel = highBtn?.querySelector('.priority-filter-label');
+  const mediumLabel = mediumBtn?.querySelector('.priority-filter-label');
+  const lowLabel = lowBtn?.querySelector('.priority-filter-label');
+  const allLabel = allBtn?.querySelector('.priority-filter-label');
+  
+  if (highLabel) highLabel.textContent = `High (${counts.high})`;
+  if (mediumLabel) mediumLabel.textContent = `Medium (${counts.medium})`;
+  if (lowLabel) lowLabel.textContent = `Low (${counts.low})`;
+  if (allLabel) allLabel.textContent = `All (${counts.all})`;
+  
+  // Update active states
+  [highBtn, mediumBtn, lowBtn, allBtn].forEach(btn => {
+    if (btn) btn.classList.remove('active');
+  });
+  
+  if (selectedPriority === 'high' && highBtn) {
+    highBtn.classList.add('active');
+  } else if (selectedPriority === 'medium' && mediumBtn) {
+    mediumBtn.classList.add('active');
+  } else if (selectedPriority === 'low' && lowBtn) {
+    lowBtn.classList.add('active');
+  } else if (allBtn) {
+    allBtn.classList.add('active');
   }
 }
 
@@ -254,24 +376,37 @@ async function updateTaskStats() {
     return quoteDate.toDateString() === today.toDateString();
   }).length;
   
-  // Build cryptic stats: "Xa · Xd · Xl · Xq" (always show all)
-  const statsText = `${activeTodos.length}a · ${completedToday.length}d · ${logsToday}l · ${quotesToday}q`;
-  
-  statsEl.textContent = statsText;
+  // Build styled stats with colored badges
+  statsEl.innerHTML = `
+    <span class="stat-active">${activeTodos.length}a</span>
+    <span class="stat-done">${completedToday.length}d</span>
+    <span class="stat-logs">${logsToday}l</span>
+    <span class="stat-quotes">${quotesToday}q</span>
+  `;
 }
 
 function filterTodos(todosList) {
-  if (!searchQuery) return todosList;
+  let filtered = todosList;
   
-  return todosList.filter(todo => {
-    const searchText = (
-      todo.text.toLowerCase() + ' ' +
-      (todo.who || '').toLowerCase() + ' ' +
-      (todo.what || '').toLowerCase() + ' ' +
-      (todo.notes || '').toLowerCase()
-    );
-    return searchText.includes(searchQuery);
-  });
+  // Apply search filter
+  if (searchQuery) {
+    filtered = filtered.filter(todo => {
+      const searchText = (
+        todo.text.toLowerCase() + ' ' +
+        (todo.who || '').toLowerCase() + ' ' +
+        (todo.what || '').toLowerCase() + ' ' +
+        (todo.notes || '').toLowerCase()
+      );
+      return searchText.includes(searchQuery);
+    });
+  }
+  
+  // Apply priority filter
+  if (selectedPriority !== null) {
+    filtered = filtered.filter(todo => todo.priority === selectedPriority);
+  }
+  
+  return filtered;
 }
 
 // -- REMINDERS VIEW LOGIC --
@@ -301,6 +436,7 @@ function initRemindersView() {
         archiveBtn.setAttribute('aria-label', 'Show Archived Tasks');
       }
       
+      currentPage = 1; // Reset to first page when switching modes
       updateRemindersWarning();
       renderReminders();
       renderTodos();
@@ -546,6 +682,7 @@ if (archiveBtn && archivedList) {
       remindersBtn.setAttribute('aria-label', 'Show Reminders');
     }
     
+    currentPage = 1; // Reset to first page when switching modes
     renderTodos();
   });
 }
@@ -584,6 +721,10 @@ function renderTodos() {
     archivedList.style.display = '';
     todoList.style.display = 'none';
     remindersList.style.display = 'none';
+    const paginationContainer = document.getElementById('pagination-container');
+    if (paginationContainer) paginationContainer.style.display = 'none';
+    const priorityFilters = document.querySelector('.priority-filters');
+    if (priorityFilters) priorityFilters.style.display = 'none';
     archivedList.innerHTML = '';
     let archived = todos.filter(t => t.archived);
     archived = filterTodos(archived);
@@ -601,6 +742,10 @@ function renderTodos() {
     // Reminders view is handled in renderReminders()
     archivedList.style.display = 'none';
     todoList.style.display = 'none';
+    const paginationContainer = document.getElementById('pagination-container');
+    if (paginationContainer) paginationContainer.style.display = 'none';
+    const priorityFilters = document.querySelector('.priority-filters');
+    if (priorityFilters) priorityFilters.style.display = 'none';
   } else {
     archivedList.style.display = 'none';
     remindersList.style.display = 'none';
@@ -614,20 +759,52 @@ function renderTodos() {
     unassigned = filterTodos(unassigned);
     assigned = filterTodos(assigned);
     
-    unassigned.forEach(todo => {
-      const li = createTodoElement(todo);
-      todoList.appendChild(li);
-    });
-    if (assigned.length > 0) {
-      const divider = document.createElement('li');
-      divider.className = 'todo-divider';
-      divider.innerHTML = '<span>Assigned tasks</span>';
-      todoList.appendChild(divider);
+    // Combine unassigned and assigned for pagination
+    const allTodos = [...unassigned, ...assigned];
+    const totalTodos = allTodos.length;
+    const totalPages = Math.ceil(totalTodos / ITEMS_PER_PAGE);
+    
+    // Ensure current page is valid
+    if (currentPage > totalPages && totalPages > 0) {
+      currentPage = totalPages;
+    } else if (currentPage < 1) {
+      currentPage = 1;
     }
-    assigned.forEach(todo => {
+    
+    // Calculate pagination slice
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedTodos = allTodos.slice(startIndex, endIndex);
+    
+    // Check if we need to show the divider on this page
+    // Show divider if: assigned todos exist, unassigned todos exist, 
+    // and the current page contains both unassigned and assigned todos
+    const hasUnassignedOnPage = paginatedTodos.some(todo => unassigned.includes(todo));
+    const hasAssignedOnPage = paginatedTodos.some(todo => assigned.includes(todo));
+    const shouldShowDivider = assigned.length > 0 && unassigned.length > 0 && hasUnassignedOnPage && hasAssignedOnPage;
+    
+    paginatedTodos.forEach((todo, index) => {
+      // Show divider before the first assigned todo if conditions are met
+      if (shouldShowDivider && assigned.includes(todo)) {
+        // Check if this is the first assigned todo in the paginated list
+        const isFirstAssigned = !paginatedTodos.slice(0, index).some(t => assigned.includes(t));
+        if (isFirstAssigned) {
+          const divider = document.createElement('li');
+          divider.className = 'todo-divider';
+          divider.innerHTML = '<span>Assigned tasks</span>';
+          todoList.appendChild(divider);
+        }
+      }
+      
       const li = createTodoElement(todo);
       todoList.appendChild(li);
     });
+    
+    // Show priority filters, update counts, and render pagination controls
+    const priorityFilters = document.querySelector('.priority-filters');
+    if (priorityFilters) priorityFilters.style.display = 'flex';
+    updatePriorityFilters(); // Update counts in filter buttons
+    renderPagination(totalPages, totalTodos);
   }
 }
 
@@ -718,6 +895,7 @@ async function handleTodoClick(e) {
       todo.completedAt = null;
     }
     await saveTodos();
+    updatePriorityFilters(); // Update counts when todo is completed/uncompleted
     renderTodos();
   } else if (e.target.closest('.edit-note-btn')) {
     await openNotesModal(todo);
@@ -821,6 +999,7 @@ async function saveEditedTodo() {
         renderReminders();
     } else {
       await saveTodos();
+      updatePriorityFilters(); // Update counts when todo is edited (priority might change)
       renderTodos();
     }
   }
@@ -846,6 +1025,7 @@ async function deleteFromEditModal() {
     } else {
       todos = todos.filter(t => t.id !== currentEditingTodoForEdit.id);
       await saveTodos();
+      updatePriorityFilters(); // Update counts when todo is deleted
       renderTodos();
     }
     closeEditTodoModal();
@@ -1236,6 +1416,7 @@ async function changePriority(todo) {
   const nextIndex = (currentIndex + 1) % priorities.length;
   todo.priority = priorities[nextIndex];
   await saveTodos();
+  updatePriorityFilters(); // Update counts when priority is changed
   renderTodos();
 }
 
@@ -1739,8 +1920,21 @@ function initModulesSearch() {
   if (searchInput) {
     searchInput.addEventListener('input', (e) => {
       modulesSearchQuery = e.target.value.toLowerCase().trim();
+      updateModulesVisibility();
       renderModules();
     });
+  }
+}
+
+// Update modules grid visibility based on search query
+function updateModulesVisibility() {
+  const modulesGrid = document.getElementById('modules-grid');
+  if (modulesGrid) {
+    if (modulesSearchQuery) {
+      modulesGrid.classList.add('visible');
+    } else {
+      modulesGrid.classList.remove('visible');
+    }
   }
 }
 
@@ -1749,8 +1943,8 @@ function filterModules() {
   if (!modulesSearchQuery) return modules;
   
   return modules.filter(module => {
-    return module.name.toLowerCase().includes(modulesSearchQuery) ||
-           (module.description && module.description.toLowerCase().includes(modulesSearchQuery));
+    // Only show modules when the full name matches exactly
+    return module.name.toLowerCase() === modulesSearchQuery;
   });
 }
 
@@ -1809,8 +2003,79 @@ function openModule(module) {
   // Check if module folder exists
   const modulePath = `${module.folder}/index.html`;
   
-  // Try to open the module in a new window/tab
-  window.open(modulePath, '_blank');
+  // Navigate to the module in the same page
+  window.location.href = modulePath;
+}
+
+// -- PAGINATION LOGIC --
+function initPagination() {
+  const prevBtn = document.getElementById('pagination-prev');
+  const nextBtn = document.getElementById('pagination-next');
+  
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTodos();
+      }
+    });
+  }
+  
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      const totalTodos = getTotalVisibleTodos();
+      const totalPages = Math.ceil(totalTodos / ITEMS_PER_PAGE);
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTodos();
+      }
+    });
+  }
+}
+
+function getTotalVisibleTodos() {
+  if (archiveMode || remindersMode) return 0;
+  
+  let unassigned = todos.filter(t => !t.archived && !t.who).sort((a, b) => (a.order || 0) - (b.order || 0));
+  let assigned = todos.filter(t => !t.archived && t.who).sort((a, b) => (a.order || 0) - (b.order || 0));
+  
+  unassigned = filterTodos(unassigned);
+  assigned = filterTodos(assigned);
+  
+  return unassigned.length + assigned.length;
+}
+
+function renderPagination(totalPages, totalTodos) {
+  const paginationContainer = document.getElementById('pagination-container');
+  if (!paginationContainer) return;
+  
+  // Only show pagination if there's more than one page
+  if (totalPages <= 1) {
+    paginationContainer.style.display = 'none';
+    return;
+  }
+  
+  paginationContainer.style.display = 'flex';
+  
+  const prevBtn = document.getElementById('pagination-prev');
+  const nextBtn = document.getElementById('pagination-next');
+  const pageInfo = document.getElementById('pagination-info');
+  
+  if (prevBtn) {
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.classList.toggle('disabled', currentPage === 1);
+  }
+  
+  if (nextBtn) {
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.classList.toggle('disabled', currentPage === totalPages);
+  }
+  
+  if (pageInfo) {
+    const startItem = totalTodos === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+    const endItem = Math.min(currentPage * ITEMS_PER_PAGE, totalTodos);
+    pageInfo.textContent = `${startItem}-${endItem} of ${totalTodos}`;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
