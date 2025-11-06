@@ -333,31 +333,106 @@
     </div>
 
     <script>
+      // Supabase configuration (same as main dashboard)
+      const SUPABASE_CONFIG = {
+        url: 'https://vdrzaluohnjhucdccwin.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZkcnphbHVvaG5qaHVjZGNjd2luIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE2MTExMjQsImV4cCI6MjA3NzE4NzEyNH0.tudrEVEKh2BG-ajvjOoYxir9AwMN2U2VsBAtdV826PQ',
+        enabled: true
+      };
+
       // AI API Configuration
       const AI_CONFIG = {
         provider: 'openai',
-        apiKey: '', // API key will be stored in localStorage after first use
+        apiKey: '', // Will be loaded from Supabase
         endpoint: 'https://api.openai.com/v1/responses',
         promptId: 'pmpt_690c6c43bbc081938ab66f0adacaed290b175063dfdd9f08',
         promptVersion: '2'
       };
 
-      // Check for API key in localStorage or environment
-      function getApiKey() {
-        // First check localStorage
-        const storedKey = localStorage.getItem('dona_api_key');
-        if (storedKey) return storedKey;
-        
-        // Then check if set in config
-        if (AI_CONFIG.apiKey) return AI_CONFIG.apiKey;
-        
-        // Prompt user to enter API key
-        return null;
+      // Cache for API key to avoid repeated Supabase calls
+      let cachedApiKey = null;
+      let apiKeyLoadPromise = null;
+
+      // Fetch API key from Supabase
+      async function fetchApiKeyFromSupabase() {
+        if (!SUPABASE_CONFIG.enabled || !SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
+          return null;
+        }
+
+        try {
+          const response = await fetch(
+            `${SUPABASE_CONFIG.url}/rest/v1/app_settings?key=eq.dona_openai_api_key`,
+            {
+              headers: {
+                'apikey': SUPABASE_CONFIG.anonKey,
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.length > 0 && data[0].value) {
+              return data[0].value;
+            }
+          }
+          return null;
+        } catch (error) {
+          console.error('Error fetching API key from Supabase:', error);
+          return null;
+        }
       }
 
-      // Save API key to localStorage
+      // Get API key with priority: Supabase > localStorage > prompt
+      async function getApiKey() {
+        // Return cached key if available
+        if (cachedApiKey) {
+          return cachedApiKey;
+        }
+
+        // If already loading, wait for that promise
+        if (apiKeyLoadPromise) {
+          return await apiKeyLoadPromise;
+        }
+
+        // Start loading from Supabase
+        apiKeyLoadPromise = (async () => {
+          // First try Supabase
+          const supabaseKey = await fetchApiKeyFromSupabase();
+          if (supabaseKey) {
+            cachedApiKey = supabaseKey;
+            // Also save to localStorage as backup
+            localStorage.setItem('dona_api_key', supabaseKey);
+            return supabaseKey;
+          }
+
+          // Then check localStorage
+          const storedKey = localStorage.getItem('dona_api_key');
+          if (storedKey) {
+            cachedApiKey = storedKey;
+            return storedKey;
+          }
+
+          // Then check if set in config
+          if (AI_CONFIG.apiKey) {
+            cachedApiKey = AI_CONFIG.apiKey;
+            return AI_CONFIG.apiKey;
+          }
+
+          // Not found anywhere
+          return null;
+        })();
+
+        const result = await apiKeyLoadPromise;
+        apiKeyLoadPromise = null;
+        return result;
+      }
+
+      // Save API key to localStorage (as backup)
       function saveApiKey(key) {
         localStorage.setItem('dona_api_key', key);
+        cachedApiKey = key;
       }
 
       // Escape HTML to prevent XSS
@@ -369,24 +444,20 @@
 
       // Rewrite email using AI
       async function rewriteEmail(emailDraft) {
-        const apiKey = getApiKey();
+        let apiKey = await getApiKey();
         
         if (!apiKey) {
-          // Use the configured API key if available
-          if (AI_CONFIG.apiKey) {
-            saveApiKey(AI_CONFIG.apiKey);
-          } else {
-            // Prompt for API key
-            const key = window.prompt('Please enter your OpenAI API key:');
-            if (!key) {
-              throw new Error('API key is required');
-            }
-            saveApiKey(key);
+          // Prompt for API key if not found in Supabase or localStorage
+          const key = window.prompt('Please enter your OpenAI API key:');
+          if (!key) {
+            throw new Error('API key is required');
           }
+          saveApiKey(key);
+          apiKey = key;
         }
 
         if (AI_CONFIG.provider === 'openai') {
-          return await generateWithOpenAI(apiKey || getApiKey(), emailDraft);
+          return await generateWithOpenAI(apiKey, emailDraft);
         } else if (AI_CONFIG.provider === 'custom') {
           return await generateWithCustomEndpoint(emailDraft);
         } else {
