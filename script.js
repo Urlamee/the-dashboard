@@ -1910,6 +1910,13 @@ function loadModules() {
       folder: 'modules/scripts',
       icon: 'fa-solid fa-terminal',
       description: 'Quick access to scripts and tools'
+    },
+    {
+      id: 'dona',
+      name: 'Dona',
+      folder: 'modules/dona',
+      icon: 'fa-solid fa-envelope-open-text',
+      description: 'AI secretary that rewrites email drafts into a formal and friendly tone'
     }
   ];
 }

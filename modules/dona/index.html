@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+      integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="../../theme.css" />
+    <link rel="stylesheet" href="../../style.css" />
+    <title>Dona - AI Secretary</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        min-height: 100vh;
+      }
+
+      .module-container {
+        background: var(--color-surface);
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        padding: 40px;
+        max-width: 900px;
+        width: 100%;
+        box-shadow: var(--shadow-md);
+        animation: fadeIn 0.5s ease;
+      }
+
+      .module-header {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .module-icon {
+        font-size: 48px;
+        color: var(--color-primary);
+        margin-bottom: 16px;
+      }
+
+      .module-title {
+        font-size: 28px;
+        font-weight: 600;
+        color: var(--color-text);
+        margin-bottom: 8px;
+        letter-spacing: -0.02em;
+      }
+
+      .module-subtitle {
+        font-size: 14px;
+        color: var(--color-text-muted);
+      }
+
+      .form-group {
+        margin-bottom: 24px;
+      }
+
+      .form-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--color-text);
+        margin-bottom: 8px;
+      }
+
+      .form-input,
+      .form-select {
+        width: 100%;
+        padding: 12px;
+        background: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        color: var(--color-text);
+        transition: all 0.2s ease;
+      }
+
+      .form-input:focus,
+      .form-select:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+      }
+
+      .form-textarea {
+        min-height: 150px;
+        resize: vertical;
+      }
+
+      .form-select {
+        cursor: pointer;
+      }
+
+      .submit-btn {
+        width: 100%;
+        padding: 12px 24px;
+        background: var(--gradient-button);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .submit-btn:hover:not(:disabled) {
+        background: var(--gradient-button-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .submit-btn:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .submit-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      .result-container {
+        margin-top: 32px;
+        padding: 24px;
+        background: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        display: none;
+      }
+
+      .result-container.show {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .result-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 16px;
+      }
+
+      .result-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--color-text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .result-content {
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--color-text);
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        padding: 16px;
+        background: var(--color-surface);
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+      }
+
+      .copy-btn {
+        padding: 6px 12px;
+        background: var(--color-bg);
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        font-size: 12px;
+        color: var(--color-text);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .copy-btn:hover {
+        background: var(--color-primary);
+        color: white;
+        border-color: var(--color-primary);
+      }
+
+      .error-message {
+        margin-top: 16px;
+        padding: 12px;
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        border-radius: 6px;
+        color: #ef4444;
+        font-size: 13px;
+        display: none;
+      }
+
+      .error-message.show {
+        display: block;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+
+      .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        background: var(--gradient-button);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-family: inherit;
+        box-shadow: var(--shadow-sm);
+        margin-top: 32px;
+      }
+
+      .back-btn:hover {
+        background: var(--gradient-button-hover);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .back-btn:active {
+        transform: translateY(0);
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .module-container {
+          padding: 24px;
+        }
+
+        .module-title {
+          font-size: 24px;
+        }
+
+        .module-icon {
+          font-size: 40px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="module-container">
+      <div class="module-header">
+        <div class="module-icon">
+          <i class="fa-solid fa-envelope-open-text"></i>
+        </div>
+        <h1 class="module-title">Dona - AI Secretary</h1>
+        <p class="module-subtitle">Rewrite email drafts into a formal and friendly tone</p>
+      </div>
+
+      <form id="dona-form">
+        <div class="form-group">
+          <label for="email-draft" class="form-label">
+            <i class="fa-solid fa-envelope"></i> Email Draft
+          </label>
+          <textarea
+            id="email-draft"
+            class="form-input form-textarea"
+            placeholder="Paste your email draft here. The language will be automatically detected..."
+            required
+          ></textarea>
+        </div>
+
+        <button type="submit" class="submit-btn" id="submit-btn">
+          <i class="fa-solid fa-magic"></i>
+          <span>Rewrite Email</span>
+        </button>
+
+        <div class="error-message" id="error-message"></div>
+      </form>
+
+      <div class="result-container" id="result-container">
+        <div class="result-header">
+          <div class="result-title">
+            <i class="fa-solid fa-envelope"></i>
+            Rewritten Email
+          </div>
+          <button class="copy-btn" id="copy-btn" title="Copy to clipboard">
+            <i class="fa-solid fa-copy"></i>
+            Copy
+          </button>
+        </div>
+        <div class="result-content" id="result-content"></div>
+      </div>
+
+      <a href="../../index.html" class="back-btn">
+        <i class="fa-solid fa-arrow-left"></i>
+        Back to Dashboard
+      </a>
+    </div>
+
+    <script>
+      // AI API Configuration
+      const AI_CONFIG = {
+        provider: 'openai',
+        apiKey: '', // API key will be stored in localStorage after first use
+        endpoint: 'https://api.openai.com/v1/responses',
+        promptId: 'pmpt_690c6c43bbc081938ab66f0adacaed290b175063dfdd9f08',
+        promptVersion: '1'
+      };
+
+      // Check for API key in localStorage or environment
+      function getApiKey() {
+        // First check localStorage
+        const storedKey = localStorage.getItem('dona_api_key');
+        if (storedKey) return storedKey;
+        
+        // Then check if set in config
+        if (AI_CONFIG.apiKey) return AI_CONFIG.apiKey;
+        
+        // Prompt user to enter API key
+        return null;
+      }
+
+      // Save API key to localStorage
+      function saveApiKey(key) {
+        localStorage.setItem('dona_api_key', key);
+      }
+
+      // Escape HTML to prevent XSS
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+
+      // Rewrite email using AI
+      async function rewriteEmail(emailDraft) {
+        const apiKey = getApiKey();
+        
+        if (!apiKey) {
+          // Use the configured API key if available
+          if (AI_CONFIG.apiKey) {
+            saveApiKey(AI_CONFIG.apiKey);
+          } else {
+            // Prompt for API key
+            const key = window.prompt('Please enter your OpenAI API key:');
+            if (!key) {
+              throw new Error('API key is required');
+            }
+            saveApiKey(key);
+          }
+        }
+
+        if (AI_CONFIG.provider === 'openai') {
+          return await generateWithOpenAI(apiKey || getApiKey(), emailDraft);
+        } else if (AI_CONFIG.provider === 'custom') {
+          return await generateWithCustomEndpoint(emailDraft);
+        } else {
+          throw new Error('Unsupported AI provider');
+        }
+      }
+
+      // Generate with OpenAI API using prompt ID
+      async function generateWithOpenAI(apiKey, emailDraft) {
+        const response = await fetch(AI_CONFIG.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            prompt: {
+              id: AI_CONFIG.promptId,
+              version: AI_CONFIG.promptVersion
+            },
+            input: emailDraft
+          })
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({ error: { message: 'Unknown error' } }));
+          throw new Error(error.error?.message || `API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Extract text from OpenAI Responses API structure
+        // The text is at: data.output[0].content[0].text
+        if (data.output && Array.isArray(data.output) && data.output.length > 0) {
+          const outputItem = data.output[0];
+          if (outputItem.content && Array.isArray(outputItem.content) && outputItem.content.length > 0) {
+            const contentItem = outputItem.content[0];
+            if (contentItem.text && typeof contentItem.text === 'string') {
+              return contentItem.text.trim();
+            }
+          }
+        }
+        
+        // Fallback: try other possible structures
+        if (data.output?.[0]?.content?.[0]?.text) {
+          return String(data.output[0].content[0].text).trim();
+        }
+        
+        // If we can't find the text, log and return error
+        console.error('Could not extract text from response:', data);
+        throw new Error('Could not extract text from API response. Please check the console for details.');
+      }
+
+      // Generate with custom endpoint
+      async function generateWithCustomEndpoint(prompt) {
+        const response = await fetch(AI_CONFIG.endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            prompt: prompt,
+            temperature: AI_CONFIG.temperature,
+            max_tokens: AI_CONFIG.maxTokens
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.content || data.text || data.response || '';
+      }
+
+      // Handle form submission
+      const donaForm = document.getElementById('dona-form');
+      const submitBtn = document.getElementById('submit-btn');
+      const resultContainer = document.getElementById('result-container');
+      const resultContent = document.getElementById('result-content');
+      const errorMessage = document.getElementById('error-message');
+      const copyBtn = document.getElementById('copy-btn');
+
+      donaForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const emailDraft = document.getElementById('email-draft').value.trim();
+
+        if (!emailDraft) {
+          showError('Please enter an email draft to rewrite');
+          return;
+        }
+
+        // Hide previous results and errors
+        resultContainer.classList.remove('show');
+        errorMessage.classList.remove('show');
+
+        // Show loading state
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="loading-spinner"></span> Rewriting...';
+
+        try {
+          const rewrittenEmail = await rewriteEmail(emailDraft);
+          
+          // Ensure we have a string
+          const emailText = typeof rewrittenEmail === 'string' 
+            ? rewrittenEmail 
+            : String(rewrittenEmail);
+          
+          // Show result
+          resultContent.textContent = emailText;
+          resultContainer.classList.add('show');
+          
+          // Scroll to result
+          resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch (error) {
+          console.error('Error rewriting email:', error);
+          showError(error.message || 'Failed to rewrite email. Please check your API key and try again.');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fa-solid fa-magic"></i> <span>Rewrite Email</span>';
+        }
+      });
+
+      // Copy to clipboard
+      copyBtn.addEventListener('click', async () => {
+        const text = resultContent.textContent;
+        try {
+          await navigator.clipboard.writeText(text);
+          copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+          setTimeout(() => {
+            copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy';
+          }, 2000);
+        } catch (error) {
+          // Fallback for older browsers
+          const textarea = document.createElement('textarea');
+          textarea.value = text;
+          document.body.appendChild(textarea);
+          textarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textarea);
+          copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+          setTimeout(() => {
+            copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> Copy';
+          }, 2000);
+        }
+      });
+
+      // Show error message
+      function showError(message) {
+        errorMessage.textContent = message;
+        errorMessage.classList.add('show');
+      }
+    </script>
+  </body>
+</html>
+
